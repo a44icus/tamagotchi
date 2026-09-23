@@ -422,7 +422,7 @@ function drawCover(img) {
 function drawRoom() {
   const bg = currentRoom(), img = bg ? IMG[bg] : null;
   if (ready(img)) drawCover(img); else drawRoomProcedural();
-  for (const p of pet.poops) drawPoop(p.x * W, H * (0.9 + (p.x % 0.05)));
+  for (const p of pet.poops) drawPoop(p.x * W + roomPanX, H * (0.9 + (p.x % 0.05)));   // solidaires du décor
   if (pet.asleep) { ctx.fillStyle = "rgba(18,18,55,.42)"; ctx.fillRect(0, 0, W, H); }  // "lumière éteinte"
 }
 
@@ -494,7 +494,7 @@ function eggFrame() {
 function drawEggSprite(t) {
   const img = IMG[CFG.eggSheet.file];
   if (!ready(img)) { drawCreatureProcedural(t); return; }
-  const stage = currentStage(), baseY = H * 0.84, x = creature.x * W, targetH = H * stage.scale;
+  const stage = currentStage(), baseY = H * 0.84, x = creature.x * W + roomPanX, targetH = H * stage.scale;
   const hatching = babyAtMin() - ageMin() <= hatchDur();
   const wob = hatching ? Math.sin(t * 0.03) * 0.07 : Math.sin(t * 0.004) * 0.05;
   ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(x, baseY + 2, targetH * .3, targetH * .06, 0, 0, 7); ctx.fill();
@@ -508,7 +508,7 @@ function drawCreature(t) {
   if (stage.key === "egg") { drawEggSprite(t); return; }
   const img = pickSprite();
   if (!ready(img)) { drawCreatureProcedural(t); return; }
-  const baseY = H * floorY(), x = creature.x * W;
+  const baseY = H * floorY(), x = creature.x * W + roomPanX;   // solidaire du décor
   const targetH = H * (stage.scale > 1 ? stage.scale / 100 : stage.scale); // tolère échelle en % ou fraction
   const scale = targetH / img.naturalHeight, w = img.naturalWidth * scale, h = targetH;
   const hop = pet.asleep || busy() ? 0 : Math.abs(Math.sin(t * 0.004)) * 7;
@@ -532,7 +532,7 @@ function drawParticles(dt) {
 
 // ---- dessin de secours ----
 function drawCreatureProcedural(t) {
-  const stage = currentStage().key, m = mood(), baseY = H * 0.8, x = creature.x * W;
+  const stage = currentStage().key, m = mood(), baseY = H * 0.8, x = creature.x * W + roomPanX;
   const sizeByStage = { egg: 42, baby: 34, child: 44, teen: 54, adult: 66 };
   const R = sizeByStage[stage] || 48;
   const hop = pet.asleep ? 0 : Math.abs(Math.sin(t * 0.004)) * (stage === "egg" ? 3 : 8), cy = baseY - R - hop;
