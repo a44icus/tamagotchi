@@ -30,6 +30,10 @@
   .stage { font-size:12px; font-weight:700; color:#7a6ca0; background:#efe8ff; padding:4px 10px; border-radius:999px; }
   .admin-link { text-decoration:none; font-size:17px; opacity:.6; transition:.15s; }
   .admin-link:hover { opacity:1; transform:rotate(40deg); }
+  .hbtn { background:none; border:none; cursor:pointer; font-size:16px; line-height:1; padding:0; opacity:.6; transition:.15s; }
+  .hbtn:hover { opacity:1; transform:scale(1.15); }
+  .hbtn.off { opacity:.3; }
+  #backList .grow { font-weight:800; }
 
   .screen { position:relative; border-radius:22px; overflow:hidden;
     box-shadow: inset 0 0 0 4px #d9ccff, inset 0 0 30px rgba(120,90,200,.18); aspect-ratio:1672/941; background:#bfe0ff; }
@@ -126,6 +130,8 @@
       <div class="name">🐾 <span id="petName">…</span></div>
       <div class="head-right">
         <div class="stage"><span id="stageTxt">Œuf</span> · <span id="ageTxt">0 min</span></div>
+        <button class="hbtn" id="soundBtn" title="Sons">🔊</button>
+        <button class="hbtn" id="notifBtn" title="Alertes de besoin">🔔</button>
         <button class="admin-link" id="accountBtn" title="Mon compte" style="background:none;border:none;cursor:pointer">👤</button>
         <a class="admin-link" href="admin.html" title="Espace admin">⚙️</a>
       </div>
@@ -155,6 +161,16 @@
       <h1 id="deadTitle">Oh non…</h1>
       <p id="deadTxt"></p>
       <button class="go" id="againBtn">Adopter un nouvel œuf</button>
+    </div>
+
+    <!-- Retour : résumé de l'absence -->
+    <div class="overlay" id="backModal">
+      <button class="closeX" data-close="backModal">✕</button>
+      <div style="font-size:52px">👋</div>
+      <h1>Content de te revoir&nbsp;!</h1>
+      <p id="backSub" style="margin-top:-6px"></p>
+      <div class="list" id="backList"></div>
+      <button class="go" id="backOk">Prendre soin de lui</button>
     </div>
 
     <!-- Connexion / inscription -->
@@ -280,9 +296,7 @@ async function cloudFlush() {
 // ---------- Stades ----------
 function ageMin() { return (Date.now() - pet.birth) / 60000; }
 function careQuality() { return pet.careTicks ? pet.careSum / pet.careTicks / 100 : 0.75; }  // 0..1
-function currentStage() {
-  if (pet.dead) return CFG.stages[0];
-  const a = ageMin(), cq = careQuality();
+function stageFor(a, cq) {
   let cur = CFG.stages[0];
   for (const st of CFG.stages) {
     if (a < st.fromMin) continue;
@@ -290,6 +304,10 @@ function currentStage() {
     cur = st;
   }
   return cur;
+}
+function currentStage() {
+  if (pet.dead) return CFG.stages[0];
+  return stageFor(ageMin(), careQuality());
 }
 
 // ---------- Simulation (temps réel + hors-ligne) ----------
@@ -585,7 +603,7 @@ function actionReady(a) {
 }
 function startAction(a) {
   if (!pet || pet.dead || busy()) return;
-  if (a.flags.toggleSleep) { pet.asleep = !pet.asleep; floatMsg(pet.asleep ? "Bonne nuit… 💤" : "Réveil ! ☀️"); save(); return; }
+  if (a.flags.toggleSleep) { pet.asleep = !pet.asleep; sfx(pet.asleep ? "cuddle" : "ok"); floatMsg(pet.asleep ? "Bonne nuit… 💤" : "Réveil ! ☀️"); save(); return; }
   if (pet.asleep) { floatMsg("Il dort… réveille-le d'abord"); return; }
   if (a.flags.onlyWhenSick && !pet.sick) { floatMsg("En pleine forme ❤️"); return; }
   if (cooldowns[a.id] && performance.now() < cooldowns[a.id]) { floatMsg("Encore un instant…"); return; }
@@ -600,6 +618,7 @@ function finishAction(a) {
   if (a.flags.clearPoops) pet.poops = [];
   if (a.flags.curesSick) pet.sick = false;
   burst(a.fx, a.fxCount);
+  sfx({ feed: "eat", play: "play", clean: "clean", heal: "heal", cuddle: "cuddle" }[a.id] || "ok");
   floatMsg(a.label + " ✓");
   if (a.cooldown) cooldowns[a.id] = performance.now() + a.cooldown;
   activity = null;
@@ -665,6 +684,114 @@ let floatTimer;
 function floatMsg(txt) { const f = $("float"); f.textContent = txt; f.style.opacity = "1"; f.style.top = "14%"; clearTimeout(floatTimer); floatTimer = setTimeout(() => { f.style.opacity = "0"; f.style.top = "8%"; }, 900); }
 
 // ============================================================
+//  SONS · ALERTES DE BESOIN · ÉCRAN DE RETOUR
+// ============================================================
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+const PREFS = {
+  sound: lsGet("tama_sound", "1") !== "0",
+  notif: lsGet("tama_notif", "0") === "1",
+};
+
+// --- Moteur audio (WebAudio, aucun fichier) ---
+let actx = null;
+function audioCtx() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} } return actx; }
+function unlockAudio() { const c = audioCtx(); if (c && c.state === "suspended") c.resume().catch(() => {}); }
+document.addEventListener("pointerdown", unlockAudio);
+function tone(freq, dur, type, vol, when) {
+  const c = audioCtx(); if (!c || !PREFS.sound) return;
+  const t0 = c.currentTime + (when || 0);
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type || "sine"; o.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol || 0.15, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(c.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+const SFX = {
+  ok:     () => tone(660, 0.12, "triangle", 0.16),
+  eat:    () => { tone(440, 0.09, "square", 0.12); tone(560, 0.09, "square", 0.12, 0.09); },
+  play:   () => [523, 659, 784].forEach((f, i) => tone(f, 0.1, "triangle", 0.15, i * 0.08)),
+  clean:  () => { tone(900, 0.18, "sine", 0.12); tone(1250, 0.18, "sine", 0.1, 0.06); },
+  heal:   () => { tone(700, 0.14, "sine", 0.14); tone(980, 0.16, "sine", 0.14, 0.12); },
+  cuddle: () => { tone(520, 0.16, "sine", 0.14); tone(660, 0.2, "sine", 0.12, 0.1); },
+  evolve: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.16, "triangle", 0.18, i * 0.12)),
+  alert:  () => { tone(340, 0.16, "square", 0.13); tone(247, 0.22, "square", 0.13, 0.17); },
+  coin:   () => { tone(988, 0.08, "square", 0.14); tone(1319, 0.12, "square", 0.14, 0.07); },
+};
+function sfx(name) { (SFX[name] || SFX.ok)(); }
+
+// --- Alertes de besoin (badge d'onglet + notification navigateur) ---
+const CRIT = {};
+const BASE_TITLE = "Mon Tamagotchi";
+function lowThresh(key) { const T = CFG.thresholds || {}; const v = T[key + "Low"]; return typeof v === "number" ? v : 20; }
+function setTitleBadge(n) { document.title = n > 0 ? "⚠️ (" + n + ") " + (pet ? pet.name : BASE_TITLE) : (pet ? pet.name + " — " + BASE_TITLE : BASE_TITLE); }
+function checkNeeds() {
+  if (!pet || pet.dead) { setTitleBadge(0); return; }
+  let count = 0; const newly = [];
+  for (const n of CFG.needs) {
+    const isCrit = S(n.key) <= lowThresh(n.key);
+    const prev = CRIT[n.key] || (CRIT[n.key] = { crit: false, notifiedAt: 0 });
+    if (isCrit) { count++; if (!prev.crit) newly.push(n); }
+    prev.crit = isCrit;
+  }
+  setTitleBadge(count);
+  if (newly.length) { sfx("alert"); maybeNotify(newly); }
+}
+function maybeNotify(list) {
+  if (!PREFS.notif || !("Notification" in window) || Notification.permission !== "granted" || !document.hidden) return;
+  const now = Date.now();
+  const due = list.filter(n => now - (CRIT[n.key].notifiedAt || 0) > 10 * 60 * 1000);   // 1 rappel / besoin / 10 min max
+  if (!due.length) return;
+  due.forEach(n => CRIT[n.key].notifiedAt = now);
+  const names = due.map(n => n.label.toLowerCase()).join(", ");
+  try {
+    const nt = new Notification(pet.name + " a besoin de toi 🐾", { body: "Au plus bas : " + names + ".", tag: "tama-need", renotify: true });
+    nt.onclick = () => { try { window.focus(); } catch {} nt.close(); };
+  } catch {}
+}
+
+// --- Boutons son / alertes ---
+function updateToggleUI() {
+  const sb = $("soundBtn"), nb = $("notifBtn");
+  if (sb) { sb.textContent = PREFS.sound ? "🔊" : "🔇"; sb.classList.toggle("off", !PREFS.sound); }
+  if (nb) { nb.textContent = PREFS.notif ? "🔔" : "🔕"; nb.classList.toggle("off", !PREFS.notif); }
+}
+$("soundBtn").onclick = () => { PREFS.sound = !PREFS.sound; lsSet("tama_sound", PREFS.sound ? "1" : "0"); updateToggleUI(); if (PREFS.sound) { unlockAudio(); sfx("ok"); } };
+$("notifBtn").onclick = async () => {
+  if (!PREFS.notif) {
+    if (!("Notification" in window)) { floatMsg("Notifications non supportées"); return; }
+    if (Notification.permission !== "granted") {
+      const p = await Notification.requestPermission().catch(() => "denied");
+      if (p !== "granted") { floatMsg("Alertes refusées par le navigateur"); return; }
+    }
+    PREFS.notif = true; floatMsg("Alertes activées 🔔");
+  } else { PREFS.notif = false; floatMsg("Alertes désactivées 🔕"); }
+  lsSet("tama_notif", PREFS.notif ? "1" : "0"); updateToggleUI();
+};
+updateToggleUI();
+
+// --- Écran de retour « pendant ton absence » ---
+function showBackReport(offlineMin, before) {
+  const list = $("backList"); if (!list) return;
+  const rows = [];
+  CFG.needs.forEach(n => {
+    const d = Math.round(S(n.key) - before.stats[n.key]);
+    if (d <= -1) rows.push('<div class="rowitem"><div class="grow">' + n.label + '</div><span class="muted" style="color:#e5484d">' + d + '</span></div>');
+  });
+  const newPoops = (pet.poops ? pet.poops.length : 0) - before.poops;
+  if (newPoops > 0) rows.push('<div class="rowitem"><div class="grow">💩 Crottes</div><span class="muted">+' + newPoops + '</span></div>');
+  if (pet.sick && !before.sick) rows.push('<div class="rowitem"><div class="grow">🤒 Est tombé malade</div><span class="muted" style="color:#e5484d">!</span></div>');
+  if (currentStage().key !== before.stage) rows.push('<div class="rowitem"><div class="grow">✨ A évolué</div><span class="muted" style="color:#28b487">' + currentStage().label + '</span></div>');
+  if (!rows.length) rows.push('<div class="rowitem"><div class="grow">Tout va bien 💜</div><span class="muted">RAS</span></div>');
+  $("backSub").textContent = "Absence : " + fmtAge(offlineMin) + ". Voici ce qui s'est passé :";
+  list.innerHTML = rows.join("");
+  showOv("backModal");
+}
+$("backOk").onclick = () => hideOv("backModal");
+
+// ============================================================
 //  BOUCLES
 // ============================================================
 let last = performance.now();
@@ -693,11 +820,12 @@ setInterval(() => {
     pet.lastSeen = Date.now();
     const st = currentStage().key;
     if (lastStageSeen && st !== lastStageSeen && CFG.stages.findIndex(s => s.key === st) > CFG.stages.findIndex(s => s.key === lastStageSeen)) {
-      floatMsg("✨ Évolution : " + currentStage().label + " ✨"); setPose("victory", 2000); burst(CFG.evolveFx, 14);
+      floatMsg("✨ Évolution : " + currentStage().label + " ✨"); setPose("victory", 2000); burst(CFG.evolveFx, 14); sfx("evolve");
     }
     lastStageSeen = st;
     updateUI(); save();
   }
+  checkNeeds();
   if (++flushCtr >= 12) { flushCtr = 0; cloudFlush(); }   // envoi cloud ~toutes les 12 s
 }, 1000);
 
@@ -737,11 +865,18 @@ const hideOv = (id) => $$(id).classList.remove("show");
 function applyLoadedPet(p) {
   pet = migrate(p); activity = null;
   const offline = (Date.now() - pet.lastSeen) / 60000;
+  const before = {
+    stats: Object.assign({}, pet.stats),
+    poops: (pet.poops || []).length,
+    sick: !!pet.sick,
+    stage: stageFor((pet.lastSeen - pet.birth) / 60000, careQuality()).key,
+  };
   if (!pet.dead && offline > 0.05) simulate(offline);
   pet.lastSeen = Date.now(); lastStageSeen = null;
   creature.x = creature.tx = 0.5;
-  if (pet.dead) die(pet.deadReason);
+  if (pet.dead) { die(pet.deadReason); updateUI(); return; }
   updateUI();
+  if (offline >= 3) showBackReport(offline, before);
 }
 function enterGuest() {
   MODE = "guest"; activePetId = null; hideOv("auth");
