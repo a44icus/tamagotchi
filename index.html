@@ -399,8 +399,8 @@ function currentStage() {
 // ---------- Simulation (temps réel + hors-ligne) ----------
 function simulate(minutes) {
   if (pet.dead) return;
-  const T = CFG.thresholds, sim = CFG.sim;
-  const decay = {}; CFG.needs.forEach(n => decay[n.key] = n.decayPerMin || 0);
+  const T = CFG.thresholds, sim = CFG.sim, diff = CFG.difficulty || 1;
+  const decay = {}; CFG.needs.forEach(n => decay[n.key] = (n.decayPerMin || 0) * diff);
   const step = 0.25;
   let remain = Math.min(minutes, sim.offlineCapMin);
   while (remain > 0) {
@@ -771,10 +771,11 @@ function finishAction(a) {
   if (a.flags.fillHygiene) setS("hygiene", 100);
   if (a.flags.clearPoops) pet.poops = [];
   if (a.flags.curesSick) pet.sick = false;
-  pet.coins = (pet.coins || 0) + 1;   // une pièce par soin
+  const gain = (CFG.economy && CFG.economy.coinsPerCare) || 0;
+  pet.coins = (pet.coins || 0) + gain;   // pièces par soin (réglable)
   burst(a.fx, a.fxCount);
   sfx({ feed: "eat", play: "play", clean: "clean", heal: "heal", cuddle: "cuddle" }[a.id] || "ok");
-  floatMsg(a.label + " ✓  🪙+1");
+  floatMsg(a.label + " ✓" + (gain ? "  🪙+" + gain : ""));
   if (a.cooldown) cooldowns[a.id] = performance.now() + a.cooldown;
   activity = null;
   updateUI(); save();
@@ -959,6 +960,7 @@ function sizeMg() {
   mgx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 function openMiniGame(a) {
+  MG.dur = ((CFG.minigame && CFG.minigame.durationSec) || 18) * 1000;
   MG.action = a; MG.on = false; MG.score = 0; MG.items = []; MG.basket = 0.5;
   $("mgScore").textContent = "0"; $("mgTime").textContent = Math.round(MG.dur / 1000);
   $("mgIntro").style.display = ""; $("mgEnd").style.display = "none";
@@ -990,7 +992,7 @@ function mgFrame(now) {
   MG.spawnT -= 16;
   if (MG.spawnT <= 0) {
     MG.spawnT = 640 - Math.min(320, (MG.dur - remain) / 55);
-    const bomb = Math.random() < 0.17;
+    const bomb = Math.random() < ((CFG.minigame && CFG.minigame.bombRate) || 0.17);
     MG.items.push({ x: 0.08 + Math.random() * 0.84, y: -0.06, v: 0.16 + Math.random() * 0.16, bomb, e: bomb ? "💣" : MG_GOOD[(Math.random() * MG_GOOD.length) | 0], done: false });
   }
   const bx = MG.basket * W, by = H - 40;
@@ -1018,13 +1020,14 @@ function mgFrame(now) {
 function endMg() {
   MG.on = false; cancelAnimationFrame(MG.raf);
   const a = MG.action || CFG.actions.find(v => v.id === "play") || { effects: {} };
-  const funGain = Math.min(48, MG.score * 3);
+  const funGain = Math.min((CFG.minigame && CFG.minigame.funMax) || 40, MG.score * 3);
+  const coinGain = Math.round(MG.score * ((CFG.economy && CFG.economy.minigameCoinsPerPoint) || 1));
   for (const k in (a.effects || {})) if (k !== "fun" && a.effects[k] < 0) setS(k, S(k) + a.effects[k]);  // coût (énergie/faim)
   setS("fun", S("fun") + funGain);
-  pet.coins = (pet.coins || 0) + MG.score;   // 1 pièce par bonbon attrapé
+  pet.coins = (pet.coins || 0) + coinGain;
   save(); updateUI();
   $("mgEndTitle").textContent = MG.score >= 12 ? "Incroyable ! 🌟" : MG.score >= 6 ? "Bien joué ! 🎉" : "C'était chouette 🙂";
-  $("mgEndTxt").textContent = "Score : " + MG.score + " · Bonheur +" + funGain + " · 🪙 +" + MG.score;
+  $("mgEndTxt").textContent = "Score : " + MG.score + " · Bonheur +" + funGain + " · 🪙 +" + coinGain;
   $("mgEnd").style.display = "";
   sfx(MG.score >= 6 ? "evolve" : "play");
   try { setPose("dance", 1600); burst(a.fx, Math.min(12, 4 + MG.score)); } catch {}
@@ -1036,6 +1039,7 @@ $("mgCancel").onclick = () => { MG.on = false; cancelAnimationFrame(MG.raf); hid
 // ============================================================
 //  BOUTIQUE — achat de déco et d'accessoires
 // ============================================================
+function priceOf(it) { const p = CFG.economy && CFG.economy.prices; return (p && typeof p[it.id] === "number") ? p[it.id] : it.price; }
 function openShop() { if (!pet) return; renderShop(); showOv("shopModal"); }
 function buyItem(it) {
   if (!pet) return;
@@ -1044,8 +1048,9 @@ function buyItem(it) {
     if (it.type === "wear") { pet.equipped = (pet.equipped === it.id) ? null : it.id; sfx("ok"); save(); renderShop(); }
     return;
   }
-  if ((pet.coins || 0) < it.price) { floatMsg("Pas assez de pièces 🪙"); sfx("alert"); return; }
-  pet.coins -= it.price;
+  const price = priceOf(it);
+  if ((pet.coins || 0) < price) { floatMsg("Pas assez de pièces 🪙"); sfx("alert"); return; }
+  pet.coins -= price;
   pet.inventory = pet.inventory || {}; pet.inventory[it.id] = true;
   if (it.type === "wear") pet.equipped = it.id;
   sfx("coin"); floatMsg(it.label + " acheté ! 🎉");
@@ -1060,9 +1065,9 @@ function renderShop() {
     const row = document.createElement("div"); row.className = "rowitem";
     const btn = document.createElement("button");
     if (!owned) {
-      const afford = (pet.coins || 0) >= it.price;
+      const price = priceOf(it), afford = (pet.coins || 0) >= price;
       btn.className = afford ? "play" : "del";
-      btn.textContent = "🪙 " + it.price;
+      btn.textContent = "🪙 " + price;
     } else if (it.type === "wear") {
       btn.className = equipped ? "del" : "play";
       btn.textContent = equipped ? "Retirer" : "Porter";

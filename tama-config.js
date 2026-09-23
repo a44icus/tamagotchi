@@ -117,6 +117,17 @@
       { key: "elder",           label: "Ancien",    fromMin: 10145, scale: 0.56, sprites: stdStage("elder") },
     ],
     sim: { poopEveryMin: 90, sleepEnergyPerMin: 12, offlineCapMin: 720 },
+    // Difficulté : multiplicateur de vitesse de décroissance des besoins (1 = normal, 1.6 = difficile, 0.7 = facile)
+    difficulty: 1,
+    // Économie : gains de pièces + prix de la boutique (réglables dans l'admin)
+    economy: {
+      coinsPerCare: 1,               // pièces gagnées par soin (nourrir/laver/soigner/câliner)
+      minigameCoinsPerPoint: 1,      // pièces par bonbon attrapé au mini-jeu
+      poopCoins: 1,                  // pièces par crotte ramassée
+      prices: { hat: 20, bow: 14, glasses: 30, crown: 70, stars: 12, balloons: 20, garland: 28, plant: 22, cake: 40 },
+    },
+    // Mini-jeu « Jouer »
+    minigame: { durationSec: 18, bombRate: 0.17, funMax: 40 },
     // Positions fixes de certains états : { stateKey: {x, y} } en fraction 0..1 (x = horizontal, y = ligne du sol/pieds)
     positions: {},
     // Cycle jour/nuit calé sur l'horloge réelle du joueur (heures de bascule)
