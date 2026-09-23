@@ -278,6 +278,16 @@
       <h1 id="ppName">—</h1>
       <p id="ppOwner" style="margin-top:-8px">par —</p>
       <div class="list" id="ppStats"></div>
+      <div id="ppActions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center"></div>
+    </div>
+
+    <!-- Visite : la chambre d'un autre joueur -->
+    <div class="overlay" id="visitModal">
+      <button class="closeX" data-close="visitModal">✕</button>
+      <h1 id="visitTitle">Chez —</h1>
+      <canvas id="visitCanvas" style="width:100%; max-width:340px; height:200px; border-radius:14px; background:#dff1ff"></canvas>
+      <p class="muted" id="visitInfo" style="color:#9a8fc0; font-weight:600"></p>
+      <button class="go" id="visitHug" style="background:linear-gradient(90deg,#ff8ab5,#ff6b8a); box-shadow:0 5px 0 #d94f77">💜 Envoyer un câlin</button>
     </div>
   </div>
 
@@ -1278,7 +1288,9 @@ async function loadLeaderboard() {
   });
 }
 document.querySelectorAll("#lbTabs .tab").forEach(t => t.onclick = () => { lbCat = t.dataset.cat; loadLeaderboard(); });
+let ppCurrent = null;
 function showPetProfile(r) {
+  ppCurrent = r;
   const s = r.summary || {};
   $$("ppEmoji").textContent = s.accessory || "🐾";
   $$("ppName").textContent = r.pet_name;
@@ -1287,11 +1299,59 @@ function showPetProfile(r) {
     ["Stade", s.stageLabel || "—"],
     ["Âge", s.ageText || (r.score + " min")],
     ["Qualité de soin", Math.round((s.care || 0) * 100) + " %"],
+    ["Câlins reçus", "💜 " + (r.hugs || 0)],
     ["Pièces", "🪙 " + (s.coins || 0)],
     ["Déco", s.decor || "—"],
   ];
   $$("ppStats").innerHTML = rows.map(([k, v]) => `<div class="rowitem"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  const acts = ['<button class="go" id="ppVisit" style="padding:10px 18px">🏠 Visiter</button>'];
+  if (MODE === "cloud") acts.push('<button class="go" id="ppHug" style="padding:10px 18px;background:linear-gradient(90deg,#ff8ab5,#ff6b8a);box-shadow:0 5px 0 #d94f77">💜 Câlin</button>');
+  $$("ppActions").innerHTML = acts.join("");
+  $$("ppVisit").onclick = () => openVisit(r);
+  if (MODE === "cloud") $$("ppHug").onclick = () => hugPet(r);
   showOv("petProfile");
+}
+async function hugPet(r) {
+  if (!r || !r.id) return;
+  try {
+    const total = await CLOUD.sendHug(r.id);
+    r.hugs = total; if (ppCurrent === r) showPetProfile(r);
+    sfx("cuddle"); floatMsg("💜 Câlin envoyé à " + r.pet_name + " !");
+    const vi = $$("visitInfo"); if ($$("visitModal").classList.contains("show") && vi) vi.textContent = "💜 " + total + " câlins reçus";
+  } catch (e) { floatMsg("Câlin déjà envoyé aujourd'hui 💜"); }
+}
+// ---- Visite : rendu de la chambre d'un autre joueur ----
+function openVisit(r) {
+  $$("visitTitle").textContent = "Chez " + r.pet_name;
+  const s = r.summary || {};
+  $$("visitInfo").textContent = (s.stageLabel || "") + " · par " + r.username + " · 💜 " + (r.hugs || 0) + " câlins reçus";
+  const hugBtn = $$("visitHug");
+  hugBtn.style.display = (MODE === "cloud") ? "" : "none";
+  hugBtn.onclick = () => hugPet(r);
+  showOv("visitModal");
+  requestAnimationFrame(() => drawVisitScene(r));
+}
+function drawVisitScene(r) {
+  const cv = $$("visitCanvas"), dpr = Math.min(window.devicePixelRatio || 1, 2), rect = cv.getBoundingClientRect();
+  const Wc = rect.width, Hc = rect.height; cv.width = Math.round(Wc * dpr); cv.height = Math.round(Hc * dpr);
+  const x = cv.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, Wc, Hc);
+  const roomImg = IMG[CFG.room && CFG.room.day];
+  if (roomImg && roomImg.complete && roomImg.naturalWidth) {
+    const iw = roomImg.naturalWidth, ih = roomImg.naturalHeight, sc = Math.max(Wc / iw, Hc / ih), dw = iw * sc, dh = ih * sc;
+    x.drawImage(roomImg, (Wc - dw) / 2, (Hc - dh) / 2, dw, dh);
+  } else { x.fillStyle = "#dff1ff"; x.fillRect(0, 0, Wc, Hc); }
+  const s = r.summary || {};
+  const baseY = Hc * 0.92, ch = Hc * 0.6;
+  const stg = CFG.stages.find(st => st.key === (s.stage || "baby")) || CFG.stages.find(st => st.key === "baby") || CFG.stages[1];
+  let sp = stg && stg.sprites && stg.sprites.idle; if (Array.isArray(sp)) sp = sp[0];
+  const img = sp ? (IMG[sp] || loadImg(sp)) : null;
+  x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = "#000";
+  if (img && img.complete && img.naturalWidth) {
+    const scl = ch / img.naturalHeight, w = img.naturalWidth * scl;
+    x.drawImage(img, Wc / 2 - w / 2, baseY - ch, w, ch);
+  } else { x.font = Math.round(ch * 0.7) + "px serif"; x.fillText(s.stage === "egg" ? "🥚" : "🐾", Wc / 2, baseY - ch * 0.5); }
+  if (s.accessory) { x.save(); x.fillStyle = "#000"; x.shadowColor = "rgba(0,0,0,.4)"; x.shadowBlur = ch * 0.08; x.font = Math.round(ch * 0.4) + "px serif"; x.fillText(s.accessory, Wc / 2, baseY - ch * 0.92); x.restore(); }
+  if (s.decor) { x.save(); x.fillStyle = "#000"; x.font = Math.round(Hc * 0.1) + "px serif"; [...s.decor].forEach((e, i) => x.fillText(e, Wc * (0.12 + 0.16 * i), Hc * 0.18)); x.restore(); }
 }
 
 // ---------- Démarrage ----------
