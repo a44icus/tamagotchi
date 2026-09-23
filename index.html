@@ -325,10 +325,11 @@ function simulate(minutes) {
       if (Math.random() < risk * dm * 4) pet.sick = true;
     }
     let hDelta = 0;
-    if (S("hunger") <= 0) hDelta -= 6;
-    if (S("hygiene") <= 0) hDelta -= 4;
-    if (pet.sick) hDelta -= 5;
-    if (!pet.sick && S("hunger") > 40 && S("hygiene") > 40 && S("fun") > 30) hDelta += 3;
+    // La santé s'érode lentement quand un besoin est à zéro (fenêtre de rattrapage de plusieurs heures)
+    if (S("hunger") <= 0) hDelta -= 0.6;
+    if (S("hygiene") <= 0) hDelta -= 0.35;
+    if (pet.sick) hDelta -= 0.5;
+    if (!pet.sick && S("hunger") > 40 && S("hygiene") > 40 && S("fun") > 30) hDelta += 0.6;
     setS("health", S("health") + hDelta * dm);
     pet.careSum += (S("hunger") + S("fun") + S("hygiene") + S("health")) / 4; pet.careTicks++;   // qualité de soin
     if (S("health") <= 0) { die(pet.sick ? "maladie" : (S("hunger") <= 0 ? "faim" : "négligence")); return; }

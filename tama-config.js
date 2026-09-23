@@ -77,11 +77,13 @@
   const DEFAULTS = {
     kitBase: KIT,
     needs: [
-      { key: "hunger",  label: "Faim",     icon: "icons/02_food_bowl.png", decayPerMin: 6,   start: 80 },
-      { key: "fun",     label: "Bonheur",  icon: "icons/01_heart.png",     decayPerMin: 4.5, start: 80 },
-      { key: "energy",  label: "Énergie",  icon: "icons/04_sleep_zzz.png", decayPerMin: 3.5, start: 90 },
-      { key: "hygiene", label: "Propreté", icon: "icons/05_soap.png",      decayPerMin: 3.5, start: 90 },
-      { key: "health",  label: "Santé",    icon: "icons/07_medicine.png",  decayPerMin: 0,   start: 100 },
+      // Décroissance lente, cohérente avec le cycle de vie réaliste (~10 j) :
+      // on prend soin du pet quelques fois par jour (une jauge se vide en ~5-12 h).
+      { key: "hunger",  label: "Faim",     icon: "icons/02_food_bowl.png", decayPerMin: 0.2,  start: 80 },
+      { key: "fun",     label: "Bonheur",  icon: "icons/01_heart.png",     decayPerMin: 0.15, start: 80 },
+      { key: "energy",  label: "Énergie",  icon: "icons/04_sleep_zzz.png", decayPerMin: 0.12, start: 90 },
+      { key: "hygiene", label: "Propreté", icon: "icons/05_soap.png",      decayPerMin: 0.13, start: 90 },
+      { key: "health",  label: "Santé",    icon: "icons/07_medicine.png",  decayPerMin: 0,    start: 100 },
     ],
     thresholds: { hungerLow: 20, funLow: 20, healthLow: 20, energyLow: 15, happyFun: 70, happyHunger: 60 },
     moods: {
@@ -114,7 +116,7 @@
       { key: "evolved_stage_2", label: "Évolué II", fromMin: 7265,  scale: 0.60, requireCare: 0.72, sprites: stdStage("evolved_stage_2") },
       { key: "elder",           label: "Ancien",    fromMin: 10145, scale: 0.56, sprites: stdStage("elder") },
     ],
-    sim: { poopEveryMin: 1.6, sleepEnergyPerMin: 24, offlineCapMin: 720 },
+    sim: { poopEveryMin: 90, sleepEnergyPerMin: 12, offlineCapMin: 720 },
     // Positions fixes de certains états : { stateKey: {x, y} } en fraction 0..1 (x = horizontal, y = ligne du sol/pieds)
     positions: {},
     // Cycle jour/nuit calé sur l'horloge réelle du joueur (heures de bascule)
