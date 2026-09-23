@@ -41,6 +41,10 @@
   #ppStats .rowitem { justify-content:space-between; } #ppStats .k { color:#9a8fc0; font-weight:700; font-size:12px; } #ppStats .v { font-weight:800; font-size:13px; }
   .hist-legend { display:flex; flex-wrap:wrap; gap:8px 14px; justify-content:center; font-size:12px; font-weight:700; color:#7a6ca0; }
   .hist-legend span { display:inline-flex; align-items:center; gap:5px; } .hist-legend i { width:12px; height:4px; border-radius:2px; display:inline-block; }
+  .food-grid { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:320px; }
+  .foodbtn { border:1px solid #eadff8; background:#fff; border-radius:14px; padding:10px 6px; width:88px; cursor:pointer; font-size:30px; display:flex; flex-direction:column; align-items:center; gap:4px; transition:.12s; }
+  .foodbtn span { font-size:12px; font-weight:700; color:#7a6ca0; } .foodbtn:hover { transform:translateY(-2px); box-shadow:0 5px 12px rgba(138,108,255,.18); }
+  .foodbtn.fav { border-color:#ffcf5b; box-shadow:0 0 0 2px #ffe9a8 inset; }
   #backList .grow { font-weight:800; }
   #miniGame { padding:0; overflow:hidden; background:#dff1ff; }
   #mgCanvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block; }
@@ -198,6 +202,15 @@
       <div class="hist-legend" id="histLegend"></div>
     </div>
 
+    <!-- Menu des aliments -->
+    <div class="overlay" id="foodModal">
+      <button class="closeX" data-close="foodModal">✕</button>
+      <div style="font-size:40px">🍽️</div>
+      <h1>Qu'est-ce qu'on mange&nbsp;?</h1>
+      <p style="margin-top:-6px">Chaque aliment rassasie et amuse différemment. Ton compagnon a un plat préféré à découvrir&nbsp;!</p>
+      <div class="food-grid" id="foodList"></div>
+    </div>
+
     <!-- Boutique -->
     <div class="overlay" id="shopModal">
       <button class="closeX" data-close="shopModal">✕</button>
@@ -330,7 +343,8 @@ function newPet(name) {
   const now = Date.now();
   const stats = {};
   CFG.needs.forEach(n => stats[n.key] = n.start);
-  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null, history: [], lastSample: 0 };
+  const foods = CFG.foods || [];
+  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null, history: [], lastSample: 0, favFood: foods.length ? foods[Math.floor(Math.random() * foods.length)].id : null, favFound: false };
 }
 function migrate(p) {
   if (!p.stats) { // ancien format à plat
@@ -345,6 +359,8 @@ function migrate(p) {
   if (typeof p.equipped === "undefined") p.equipped = null;
   if (!Array.isArray(p.history)) p.history = [];
   if (typeof p.lastSample !== "number") p.lastSample = 0;
+  if (typeof p.favFood === "undefined") { const f = CFG.foods || []; p.favFood = f.length ? f[Math.floor(Math.random() * f.length)].id : null; }
+  if (typeof p.favFound === "undefined") p.favFound = false;
   return p;
 }
 const S = (k) => pet.stats[k];
@@ -468,11 +484,29 @@ const creature = { x: 0.5, tx: 0.5, dir: 1 };
 
 // --- glisser (doigt/souris) pour balayer la chambre latéralement ---
 let roomPanX = 0, panDrag = null;
-cv.addEventListener("pointerdown", (e) => { panDrag = { x: e.clientX, pan: roomPanX }; try { cv.setPointerCapture(e.pointerId); } catch {} });
+cv.addEventListener("pointerdown", (e) => { panDrag = { x: e.clientX, y: e.clientY, pan: roomPanX }; try { cv.setPointerCapture(e.pointerId); } catch {} });
 cv.addEventListener("pointermove", (e) => { if (panDrag) roomPanX = panDrag.pan + (e.clientX - panDrag.x); });
-const endPan = () => { panDrag = null; };
-cv.addEventListener("pointerup", endPan);
-cv.addEventListener("pointercancel", endPan);
+cv.addEventListener("pointerup", (e) => {
+  const moved = panDrag ? Math.abs(e.clientX - panDrag.x) : 999;
+  panDrag = null;
+  if (moved < 6) tapClean(e);   // tap franc (pas un balayage) → nettoyer une crotte
+});
+cv.addEventListener("pointercancel", () => { panDrag = null; });
+function tapClean(e) {
+  if (!pet || pet.dead || !pet.poops || !pet.poops.length) return;
+  const r = cv.getBoundingClientRect(), tx = e.clientX - r.left, ty = e.clientY - r.top;
+  const hitR = Math.max(24, W * 0.06);
+  for (let i = 0; i < pet.poops.length; i++) {
+    const p = pet.poops[i], px = p.x * W + roomPanX, py = H * (0.9 + (p.x % 0.05));
+    if (Math.hypot(tx - px, ty - py) < hitR) {
+      pet.poops.splice(i, 1);
+      setS("hygiene", S("hygiene") + 6);
+      const c = (CFG.economy && CFG.economy.poopCoins) || 0; pet.coins = (pet.coins || 0) + c;
+      sfx("clean"); floatMsg("💩 Nettoyé !" + (c ? "  🪙+" + c : ""));
+      save(); updateUI(); return;
+    }
+  }
+}
 
 function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function cloud(x, y, s) { ctx.beginPath(); ctx.arc(x, y, s, 0, 7); ctx.arc(x + s, y + 3, s * .8, 0, 7); ctx.arc(x - s, y + 3, s * .7, 0, 7); ctx.fill(); }
@@ -757,6 +791,10 @@ function startAction(a) {
     for (const k in (a.require || {})) if (S(k) < a.require[k]) { floatMsg("Pas assez d'énergie 😴"); return; }
     openMiniGame(a); return;
   }
+  if (a.id === "feed" && (CFG.foods || []).length) {   // « Nourrir » ouvre le choix d'aliment
+    if (pet.asleep) { floatMsg("Il dort… réveille-le d'abord"); return; }
+    openFoodMenu(a); return;
+  }
   if (a.flags.toggleSleep) { pet.asleep = !pet.asleep; sfx(pet.asleep ? "cuddle" : "ok"); floatMsg(pet.asleep ? "Bonne nuit… 💤" : "Réveil ! ☀️"); save(); return; }
   if (pet.asleep) { floatMsg("Il dort… réveille-le d'abord"); return; }
   if (a.flags.onlyWhenSick && !pet.sick) { floatMsg("En pleine forme ❤️"); return; }
@@ -768,6 +806,11 @@ function startAction(a) {
 }
 function finishAction(a) {
   for (const k in (a.effects || {})) setS(k, S(k) + a.effects[k]);
+  let favMsg = "";
+  if (a.food && pet.favFood === a.food.id) {   // plat préféré : bonus de bonheur
+    setS("fun", S("fun") + 8); pet.favFound = true; favMsg = " 💜 son préféré !";
+    burst(CFG.evolveFx, 6);
+  }
   if (a.flags.fillHygiene) setS("hygiene", 100);
   if (a.flags.clearPoops) pet.poops = [];
   if (a.flags.curesSick) pet.sick = false;
@@ -775,7 +818,7 @@ function finishAction(a) {
   pet.coins = (pet.coins || 0) + gain;   // pièces par soin (réglable)
   burst(a.fx, a.fxCount);
   sfx({ feed: "eat", play: "play", clean: "clean", heal: "heal", cuddle: "cuddle" }[a.id] || "ok");
-  floatMsg(a.label + " ✓" + (gain ? "  🪙+" + gain : ""));
+  floatMsg(a.label + " ✓" + favMsg + (gain ? "  🪙+" + gain : ""));
   if (a.cooldown) cooldowns[a.id] = performance.now() + a.cooldown;
   activity = null;
   updateUI(); save();
@@ -1083,6 +1126,27 @@ function renderShop() {
   });
 }
 $("shopBtn").onclick = openShop;
+
+// ============================================================
+//  ALIMENTS — choix au clic sur « Nourrir »
+// ============================================================
+function openFoodMenu(a) {
+  const list = $("foodList"); list.innerHTML = "";
+  (CFG.foods || []).forEach(f => {
+    const b = document.createElement("button"); b.className = "foodbtn";
+    if (pet.favFound && pet.favFood === f.id) b.classList.add("fav");   // révélé une fois découvert
+    b.innerHTML = (f.emoji || "🍽️") + "<span>" + f.label + "</span>";
+    b.onclick = () => { hideOv("foodModal"); feedWith(a, f); };
+    list.appendChild(b);
+  });
+  showOv("foodModal");
+}
+function feedWith(baseAction, food) {
+  const act = Object.assign({}, baseAction, { effects: { hunger: food.hunger || 0, fun: food.fun || 0 }, food, pose: "eating" });
+  if (!baseAction.duration || baseAction.duration <= 0) { finishAction(act); return; }
+  activity = { action: act, start: performance.now(), duration: baseAction.duration };
+  updateButtonsState();
+}
 
 // ============================================================
 //  HISTORIQUE DES JAUGES — échantillonnage + graphe

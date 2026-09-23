@@ -128,6 +128,14 @@
     },
     // Mini-jeu « Jouer »
     minigame: { durationSec: 18, bombRate: 0.17, funMax: 40 },
+    // Aliments proposés au clic sur « Nourrir » (chaque pet a un préféré tiré à la naissance → bonus de bonheur)
+    foods: [
+      { id: "meal",  label: "Repas",   emoji: "🍲", hunger: 26, fun: 0 },
+      { id: "fruit", label: "Fruits",  emoji: "🍓", hunger: 16, fun: 6 },
+      { id: "candy", label: "Bonbon",  emoji: "🍬", hunger: 8,  fun: 12 },
+      { id: "fish",  label: "Poisson", emoji: "🐟", hunger: 32, fun: 2 },
+      { id: "cake",  label: "Gâteau",  emoji: "🍰", hunger: 20, fun: 10 },
+    ],
     // Positions fixes de certains états : { stateKey: {x, y} } en fraction 0..1 (x = horizontal, y = ligne du sol/pieds)
     positions: {},
     // Cycle jour/nuit calé sur l'horloge réelle du joueur (heures de bascule)
