@@ -132,11 +132,16 @@
     poopSprites: ["crottes/crotte01.png", "crottes/crotte02.png", "crottes/crotte03.png"],
     // Aliments proposés au clic sur « Nourrir » (chaque pet a un préféré tiré à la naissance → bonus de bonheur)
     foods: [
-      { id: "meal",  label: "Repas",   emoji: "🍲", hunger: 26, fun: 0 },
-      { id: "fruit", label: "Fruits",  emoji: "🍓", hunger: 16, fun: 6 },
-      { id: "candy", label: "Bonbon",  emoji: "🍬", hunger: 8,  fun: 12 },
-      { id: "fish",  label: "Poisson", emoji: "🐟", hunger: 32, fun: 2 },
-      { id: "cake",  label: "Gâteau",  emoji: "🍰", hunger: 20, fun: 10 },
+      { id: "apple",     label: "Pomme",           emoji: "🍎", sprite: "food/09_pomme.png",              hunger: 14, fun: 4 },
+      { id: "banana",    label: "Banane",          emoji: "🍌", sprite: "food/10_banane.png",             hunger: 16, fun: 4 },
+      { id: "sandwich",  label: "Sandwich",        emoji: "🥪", sprite: "food/08_sandwich.png",           hunger: 30, fun: 3 },
+      { id: "pizza",     label: "Pizza",           emoji: "🍕", sprite: "food/04_part_de_pizza.png",      hunger: 28, fun: 8 },
+      { id: "cereal",    label: "Céréales",        emoji: "🥣", sprite: "food/07_bol_de_cereales.png",    hunger: 24, fun: 3 },
+      { id: "cookies",   label: "Cookies",         emoji: "🍪", sprite: "food/06_cookies.png",            hunger: 12, fun: 12 },
+      { id: "popcorn",   label: "Popcorn",         emoji: "🍿", sprite: "food/05_popcorn.png",            hunger: 10, fun: 10 },
+      { id: "candy",     label: "Bonbons",         emoji: "🍬", sprite: "food/01_bonbons_et_favoris.png", hunger: 6,  fun: 14 },
+      { id: "candybowl", label: "Bol de bonbons",  emoji: "🍭", sprite: "food/02_bol_de_bonbons.png",     hunger: 8,  fun: 13 },
+      { id: "candybox",  label: "Boîte surprise",  emoji: "🎁", sprite: "food/03_boite_de_bonbons.png",   hunger: 10, fun: 15 },
     ],
     // Positions fixes de certains états : { stateKey: {x, y} } en fraction 0..1 (x = horizontal, y = ligne du sol/pieds)
     positions: {},

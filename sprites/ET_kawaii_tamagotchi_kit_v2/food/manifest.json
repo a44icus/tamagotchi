@@ -1,0 +1,48 @@
+{
+  "kit_name": "Kit nourriture E.T. Tamagotchi",
+  "theme": "Kawaii 3D spatial / chambre d'Elliott",
+  "format": "PNG transparent",
+  "count": 10,
+  "files": [
+    {
+      "name": "01_bonbons_et_favoris.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_clean_isolated_3d_styled_digital_render_of_a_pil_1.png"
+    },
+    {
+      "name": "02_bol_de_bonbons.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_clean_isolated_product_illustration_style_image_10_batch_9.png"
+    },
+    {
+      "name": "03_boite_de_bonbons.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_clean_high_quality_colorful_3d_cgi_candy_illus_3_batch_2.png"
+    },
+    {
+      "name": "04_part_de_pizza.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_clean_high_resolution_cartoonish_3d_stylized_f_4_batch_3.png"
+    },
+    {
+      "name": "05_popcorn.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_clean_isolated_high_quality_3d_cgi_cartoonish_5_batch_4.png"
+    },
+    {
+      "name": "06_cookies.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_high_resolution_ultra_polished_cute_3d_cgi_sty_6_batch_5.png"
+    },
+    {
+      "name": "07_bol_de_cereales.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_high_quality_ultra_polished_3d_cgi_style_illust_2_batch_1.png"
+    },
+    {
+      "name": "08_sandwich.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_bright_glossy_high_detail_3d_rendered_cartoon_8_batch_7.png"
+    },
+    {
+      "name": "09_pomme.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_clean_png_style_high_resolution_digital_illust_9_batch_8.png"
+    },
+    {
+      "name": "10_banane.png",
+      "source": "/mnt/data/ghostwriter_images/generated/a_highly_polished_glossy_cartoonish_3d_cgi_illus_7_batch_6.png"
+    }
+  ]
+}

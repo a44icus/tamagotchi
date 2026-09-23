@@ -371,6 +371,7 @@ function renderFoods() {
     const row = el("div", "grid"); row.style.gridTemplateColumns = "repeat(auto-fit,minmax(110px,1fr))"; row.style.gap = "8px"; row.style.alignItems = "end";
     row.append(fieldWrap("Nom", text(f.label || "", v => f.label = v)));
     row.append(fieldWrap("Emoji", text(f.emoji || "", v => f.emoji = v)));
+    row.append(fieldWrap("Sprite (chemin)", text(f.sprite || "", v => f.sprite = v || undefined)));
     row.append(fieldWrap("Faim +", num(f.hunger || 0, v => f.hunger = v)));
     row.append(fieldWrap("Bonheur +", num(f.fun || 0, v => f.fun = v)));
     const del = el("button", "del", "Supprimer"); del.onclick = () => { cfg.foods.splice(i, 1); renderFoods(); };
