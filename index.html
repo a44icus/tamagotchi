@@ -40,6 +40,9 @@
   .hbtn:hover { opacity:1; transform:scale(1.15); }
   .hbtn.off { opacity:.3; }
   .coins { font-size:12px; font-weight:800; color:#b8860b; background:#fff6d6; border:1px solid #f0dc9a; border-radius:999px; padding:2px 8px; white-space:nowrap; }
+  #arrangeBar { position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:6; display:none; align-items:center; gap:10px; background:rgba(51,41,74,.82); color:#fff; font-size:12px; font-weight:700; padding:7px 10px 7px 14px; border-radius:999px; backdrop-filter:blur(3px); }
+  #arrangeBar.show { display:flex; }
+  #arrangeBar button { border:none; cursor:pointer; background:#8a6cff; color:#fff; font-weight:800; font-size:12px; padding:5px 12px; border-radius:999px; }
   .tabs { display:flex; gap:8px; margin-bottom:4px; flex-wrap:wrap; justify-content:center; }
   .tab { border:1px solid #e0d4f7; background:#fff; color:#8a6cff; font-weight:700; font-size:12px; padding:6px 12px; border-radius:999px; cursor:pointer; }
   .tab.on { background:#8a6cff; color:#fff; border-color:#8a6cff; }
@@ -155,6 +158,7 @@
         <div class="stage"><span id="stageTxt">Œuf</span> · <span id="ageTxt">0 min</span></div>
         <span class="coins" id="coinTxt" title="Tes pièces">🪙 0</span>
         <button class="hbtn" id="shopBtn" title="Boutique">🛍️</button>
+        <button class="hbtn" id="arrangeBtn" title="Aménager la chambre">🎨</button>
         <button class="hbtn" id="histBtn" title="Historique des jauges">📈</button>
         <button class="hbtn" id="soundBtn" title="Sons">🔊</button>
         <button class="hbtn" id="notifBtn" title="Alertes de besoin">🔔</button>
@@ -167,6 +171,7 @@
       <canvas id="cv"></canvas>
       <div id="float"></div>
       <div id="progress"><div class="pbar"><span id="pfill"></span></div><div class="plabel" id="plabel"></div></div>
+      <div id="arrangeBar"><span>🎨 Fais glisser tes décos</span><button id="arrangeDone">✓ Terminé</button></div>
     </div>
 
     <div class="stats" id="statsBars"></div>
@@ -353,7 +358,7 @@ function newPet(name) {
   const stats = {};
   CFG.needs.forEach(n => stats[n.key] = n.start);
   const foods = CFG.foods || [];
-  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null, history: [], lastSample: 0, favFood: foods.length ? foods[Math.floor(Math.random() * foods.length)].id : null, favFound: false };
+  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null, decorPos: {}, history: [], lastSample: 0, favFood: foods.length ? foods[Math.floor(Math.random() * foods.length)].id : null, favFound: false };
 }
 function migrate(p) {
   if (!p.stats) { // ancien format à plat
@@ -370,6 +375,7 @@ function migrate(p) {
   if (typeof p.lastSample !== "number") p.lastSample = 0;
   if (typeof p.favFood === "undefined") { const f = CFG.foods || []; p.favFood = f.length ? f[Math.floor(Math.random() * f.length)].id : null; }
   if (typeof p.favFound === "undefined") p.favFound = false;
+  if (!p.decorPos || typeof p.decorPos !== "object") p.decorPos = {};
   return p;
 }
 const S = (k) => pet.stats[k];
@@ -491,16 +497,38 @@ window.addEventListener("resize", resize);
 if (window.ResizeObserver) { try { new ResizeObserver(() => resize()).observe(cv); } catch {} }
 const creature = { x: 0.5, tx: 0.5, dir: 1 };
 
-// --- glisser (doigt/souris) pour balayer la chambre latéralement ---
-let roomPanX = 0, panDrag = null;
-cv.addEventListener("pointerdown", (e) => { panDrag = { x: e.clientX, y: e.clientY, pan: roomPanX }; try { cv.setPointerCapture(e.pointerId); } catch {} });
-cv.addEventListener("pointermove", (e) => { if (panDrag) roomPanX = panDrag.pan + (e.clientX - panDrag.x); });
+// --- glisser (doigt/souris) : balayer la chambre, OU déplacer une déco en mode « aménager » ---
+let roomPanX = 0, panDrag = null, editDecor = false, decorDrag = null;
+function canvasXY(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+function decorPosOf(it) { return (pet.decorPos && pet.decorPos[it.id]) || { x: it.x, y: it.y }; }
+function decorHit(tx, ty) {
+  if (!pet || !pet.inventory) return null;
+  const owned = SHOP.filter(it => it.type === "room" && pet.inventory[it.id]);
+  for (let i = owned.length - 1; i >= 0; i--) {   // du dessus vers le dessous
+    const it = owned[i], pos = decorPosOf(it), cx = pos.x * W + roomPanX, cy = pos.y * H, rad = H * (it.ah || 0.2) * 0.7;
+    if (Math.abs(tx - cx) < rad && Math.abs(ty - cy) < rad) return it;
+  }
+  return null;
+}
+cv.addEventListener("pointerdown", (e) => {
+  try { cv.setPointerCapture(e.pointerId); } catch {}
+  if (editDecor) { const p = canvasXY(e); const it = decorHit(p.x, p.y); decorDrag = it ? it.id : null; panDrag = null; return; }
+  panDrag = { x: e.clientX, y: e.clientY, pan: roomPanX };
+});
+cv.addEventListener("pointermove", (e) => {
+  if (editDecor) {
+    if (decorDrag) { const p = canvasXY(e); pet.decorPos = pet.decorPos || {}; pet.decorPos[decorDrag] = { x: Math.max(0.05, Math.min(0.95, (p.x - roomPanX) / W)), y: Math.max(0.08, Math.min(0.96, p.y / H)) }; }
+    return;
+  }
+  if (panDrag) roomPanX = panDrag.pan + (e.clientX - panDrag.x);
+});
 cv.addEventListener("pointerup", (e) => {
+  if (editDecor) { if (decorDrag) { decorDrag = null; save(); sfx("ok"); } return; }
   const moved = panDrag ? Math.abs(e.clientX - panDrag.x) : 999;
   panDrag = null;
   if (moved < 6) tapClean(e);   // tap franc (pas un balayage) → nettoyer une crotte
 });
-cv.addEventListener("pointercancel", () => { panDrag = null; });
+cv.addEventListener("pointercancel", () => { panDrag = null; decorDrag = null; });
 function tapClean(e) {
   if (!pet || pet.dead || !pet.poops || !pet.poops.length) return;
   const r = cv.getBoundingClientRect(), tx = e.clientX - r.left, ty = e.clientY - r.top;
@@ -624,7 +652,11 @@ function drawDecor() {
   if (!pet || !pet.inventory) return;
   for (const it of SHOP) {
     if (it.type !== "room" || !pet.inventory[it.id]) continue;
-    const cx = it.x * W + roomPanX, cy = it.y * H;
+    const pos = decorPosOf(it), cx = pos.x * W + roomPanX, cy = pos.y * H;
+    if (editDecor) {   // repère de déplacement
+      ctx.save(); ctx.strokeStyle = "rgba(138,108,255,.95)"; ctx.setLineDash([5, 4]); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, H * (it.ah || 0.2) * 0.62, 0, 7); ctx.stroke(); ctx.restore();
+    }
     const img = it.sprite ? (IMG[it.sprite] || loadImg(it.sprite)) : null;
     if (ready(img)) drawObj(img, cx, cy, H * (it.ah || 0.2)); else emojiAt(it.emoji, cx, cy, H * 0.1);
   }
@@ -636,7 +668,7 @@ function drawAccessory(t) {
   const x = creature.x * W + roomPanX;
   const baseY = stage.key === "egg" ? H * 0.84 : H * floorY();
   const ch = H * (stage.scale > 1 ? stage.scale / 100 : stage.scale);
-  const hop = pet.asleep || busy() ? 0 : Math.abs(Math.sin(t * 0.004)) * 7;
+  const hop = 0;   // pas d'effet de lévitation
   const cy = baseY - ch * (it.ay || 0.88) - hop;
   const img = it.sprite ? (IMG[it.sprite] || loadImg(it.sprite)) : null;
   if (ready(img)) drawObj(img, x, cy, ch * (it.ah || 0.5)); else emojiAt(it.emoji, x, cy, ch * 0.44);
@@ -727,7 +759,7 @@ function drawCreature(t) {
   const baseY = H * floorY(), x = creature.x * W + roomPanX;   // solidaire du décor
   const targetH = H * (stage.scale > 1 ? stage.scale / 100 : stage.scale); // tolère échelle en % ou fraction
   const scale = targetH / img.naturalHeight, w = img.naturalWidth * scale, h = targetH;
-  const hop = pet.asleep || busy() ? 0 : Math.abs(Math.sin(t * 0.004)) * 7;
+  const hop = 0;   // pas d'effet de lévitation
   ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(x, baseY + 2, w * .34, h * .05, 0, 0, 7); ctx.fill();
   ctx.save(); ctx.translate(x, baseY - hop); ctx.scale(creature.dir, 1); ctx.drawImage(img, -w / 2, -h, w, h); ctx.restore();
 }
@@ -751,7 +783,7 @@ function drawCreatureProcedural(t) {
   const stage = currentStage().key, m = mood(), baseY = H * 0.8, x = creature.x * W + roomPanX;
   const sizeByStage = { egg: 42, baby: 34, child: 44, teen: 54, adult: 66 };
   const R = sizeByStage[stage] || 48;
-  const hop = pet.asleep ? 0 : Math.abs(Math.sin(t * 0.004)) * (stage === "egg" ? 3 : 8), cy = baseY - R - hop;
+  const hop = 0, cy = baseY - R - hop;   // pas d'effet de lévitation
   ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(x, baseY + 4, R * .8, R * .28, 0, 0, 7); ctx.fill();
   ctx.save(); ctx.translate(x, cy); ctx.scale(creature.dir, 1);
   if (stage === "egg") { ctx.fillStyle = "#fff7e6"; ctx.beginPath(); ctx.ellipse(0, 0, R * .8, R, 0, 0, 7); ctx.fill(); ctx.restore(); return; }
@@ -1162,6 +1194,19 @@ function renderShop() {
   });
 }
 $("shopBtn").onclick = openShop;
+
+// --- Aménager la chambre : déplacer ses décos ---
+function setArrange(on) {
+  editDecor = on; decorDrag = null; panDrag = null;
+  $("arrangeBar").classList.toggle("show", on);
+  $("arrangeBtn").classList.toggle("off", !on);
+}
+$("arrangeBtn").onclick = () => {
+  if (!pet || pet.dead) return;
+  if (!editDecor && !SHOP.some(it => it.type === "room" && pet.inventory && pet.inventory[it.id])) { floatMsg("Achète d'abord de la déco 🛍️"); return; }
+  setArrange(!editDecor);
+};
+$("arrangeDone").onclick = () => setArrange(false);
 
 // ============================================================
 //  ALIMENTS — choix au clic sur « Nourrir »
