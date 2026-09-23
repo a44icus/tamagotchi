@@ -100,6 +100,24 @@
     </section>
 
     <section>
+      <h2>🎮 Difficulté &amp; mini-jeu <span class="tag">vitesse de déclin des besoins, durée et générosité du mini-jeu</span></h2>
+      <div class="grid sim-grid" id="diffGrid"></div>
+    </section>
+
+    <section>
+      <h2>🪙 Économie <span class="tag">gains de pièces et prix de la boutique</span></h2>
+      <div class="grid sim-grid" id="ecoGrid"></div>
+      <h3 style="margin:14px 0 6px; font-size:14px">Prix des objets</h3>
+      <div class="grid sim-grid" id="priceGrid"></div>
+    </section>
+
+    <section>
+      <h2>🍽️ Aliments <span class="tag">choix proposés au clic sur « Nourrir »</span></h2>
+      <div id="foodsWrap" style="display:flex; flex-direction:column; gap:10px"></div>
+      <button class="addbtn" id="addFood" style="margin-top:12px">＋ Ajouter un aliment</button>
+    </section>
+
+    <section>
       <h2>🌗 Chambre — cycle jour/nuit <span class="tag">calé sur l'horloge réelle du joueur</span></h2>
       <div class="grid sim-grid" id="roomGrid"></div>
       <p class="hint" style="margin-top:8px">Les 4 fonds (matin, midi, fin de journée, nuit) sont dans <code>chambre/</code>. Règle ici l'heure de bascule de chaque ambiance (0–23).</p>
@@ -327,7 +345,40 @@ function renderPositions() {
   renderPosList(); drawPosCanvas();
 }
 
-function renderAll() { renderNeeds(); renderThresholds(); renderMoods(); renderActions(); renderStages(); renderSim(); renderRoom(); renderPositions(); }
+// ============ DIFFICULTÉ & MINI-JEU ============
+function renderDiffMini() {
+  const g = $("diffGrid"); g.innerHTML = "";
+  g.append(fieldWrap("🎚️ Difficulté (× vitesse de déclin)", num(cfg.difficulty != null ? cfg.difficulty : 1, v => cfg.difficulty = v, "0.1")));
+  cfg.minigame = cfg.minigame || {};
+  g.append(fieldWrap("⏱️ Durée du mini-jeu (s)", num(cfg.minigame.durationSec != null ? cfg.minigame.durationSec : 18, v => cfg.minigame.durationSec = v)));
+  g.append(fieldWrap("💣 Taux de bombes (0–1)", num(cfg.minigame.bombRate != null ? cfg.minigame.bombRate : 0.17, v => cfg.minigame.bombRate = v, "0.01")));
+  g.append(fieldWrap("😄 Bonheur max / partie", num(cfg.minigame.funMax != null ? cfg.minigame.funMax : 40, v => cfg.minigame.funMax = v)));
+}
+// ============ ÉCONOMIE ============
+function renderEconomy() {
+  cfg.economy = cfg.economy || {};
+  const g = $("ecoGrid"); g.innerHTML = "";
+  g.append(fieldWrap("🪙 Pièces par soin", num(cfg.economy.coinsPerCare != null ? cfg.economy.coinsPerCare : 1, v => cfg.economy.coinsPerCare = v)));
+  g.append(fieldWrap("🪙 Pièces / bonbon (mini-jeu)", num(cfg.economy.minigameCoinsPerPoint != null ? cfg.economy.minigameCoinsPerPoint : 1, v => cfg.economy.minigameCoinsPerPoint = v, "0.1")));
+  g.append(fieldWrap("🪙 Pièces / crotte ramassée", num(cfg.economy.poopCoins != null ? cfg.economy.poopCoins : 1, v => cfg.economy.poopCoins = v)));
+  const pg = $("priceGrid"); pg.innerHTML = ""; cfg.economy.prices = cfg.economy.prices || {};
+  Object.keys(cfg.economy.prices).forEach(id => pg.append(fieldWrap("🛍️ " + id, num(cfg.economy.prices[id], v => cfg.economy.prices[id] = v))));
+}
+// ============ ALIMENTS ============
+function renderFoods() {
+  const w = $("foodsWrap"); w.innerHTML = ""; cfg.foods = cfg.foods || [];
+  cfg.foods.forEach((f, i) => {
+    const row = el("div", "grid"); row.style.gridTemplateColumns = "repeat(auto-fit,minmax(110px,1fr))"; row.style.gap = "8px"; row.style.alignItems = "end";
+    row.append(fieldWrap("Nom", text(f.label || "", v => f.label = v)));
+    row.append(fieldWrap("Emoji", text(f.emoji || "", v => f.emoji = v)));
+    row.append(fieldWrap("Faim +", num(f.hunger || 0, v => f.hunger = v)));
+    row.append(fieldWrap("Bonheur +", num(f.fun || 0, v => f.fun = v)));
+    const del = el("button", "del", "Supprimer"); del.onclick = () => { cfg.foods.splice(i, 1); renderFoods(); };
+    row.append(del); w.append(row);
+  });
+  $("addFood").onclick = () => { cfg.foods.push({ id: "food" + Date.now(), label: "Aliment", emoji: "🍽️", hunger: 15, fun: 5 }); renderFoods(); };
+}
+function renderAll() { renderNeeds(); renderThresholds(); renderMoods(); renderActions(); renderStages(); renderSim(); renderDiffMini(); renderEconomy(); renderFoods(); renderRoom(); renderPositions(); }
 (async () => { try { cfg = await CLOUD.loadConfig(); } catch {} renderAll(); })();
 
 // ============ Barre d'outils ============
