@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mon Tamagotchi — Nouveautés</title>
+<meta name="theme-color" content="#8a6cff" />
+<link rel="icon" href="icon-192.png" />
+<style>
+  :root {
+    --bg:#f3efff; --card:#ffffff; --ink:#33294a; --muted:#8a7fb0; --line:#eadff8;
+    --violet:#8a6cff; --violet-d:#6b4fd6;
+    --new:#28b487; --new-bg:#e7fff5; --imp:#3a86ff; --imp-bg:#e8f1ff;
+    --fix:#e5484d; --fix-bg:#ffe9ea; --tech:#b8860b; --tech-bg:#fff6d6;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; font-family:"Segoe UI", system-ui, -apple-system, sans-serif; color:var(--ink);
+    background:radial-gradient(1200px 600px at 50% -10%, #efe7ff 0%, var(--bg) 60%); min-height:100vh;
+    padding:0 16px 64px;
+  }
+  .wrap { max-width:760px; margin:0 auto; }
+  header { text-align:center; padding:44px 0 20px; }
+  .logo { width:74px; height:74px; border-radius:22px; box-shadow:0 10px 26px rgba(138,108,255,.35); }
+  h1 { font-size:30px; margin:16px 0 6px; }
+  .lead { color:var(--muted); font-size:15px; line-height:1.6; margin:0 auto; max-width:520px; }
+  .stats { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:22px 0 6px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 18px; min-width:104px; }
+  .stat b { display:block; font-size:22px; color:var(--violet); }
+  .stat span { font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+  .timeline { margin-top:26px; }
+  .rel { background:var(--card); border:1px solid var(--line); border-radius:22px; padding:22px 22px 8px; margin-bottom:18px; box-shadow:0 8px 22px rgba(120,90,220,.06); }
+  .rel-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+  .rel-head .v { font-weight:800; font-size:12px; color:#fff; background:var(--violet); border-radius:999px; padding:3px 10px; }
+  .rel-head h2 { font-size:19px; margin:0; }
+  .rel-head .date { color:var(--muted); font-size:12px; margin-left:auto; font-weight:600; }
+  .rel > p.desc { color:var(--muted); font-size:13.5px; line-height:1.6; margin:4px 0 14px; }
+  ul.changes { list-style:none; margin:0 0 14px; padding:0; }
+  ul.changes li { display:flex; gap:10px; align-items:flex-start; padding:7px 0; border-top:1px dashed #f0eaff; font-size:14px; line-height:1.5; }
+  ul.changes li:first-child { border-top:none; }
+  .tag { flex:none; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; border-radius:6px; padding:3px 7px; margin-top:1px; }
+  .tag.new { color:var(--new); background:var(--new-bg); } .tag.imp { color:var(--imp); background:var(--imp-bg); }
+  .tag.fix { color:var(--fix); background:var(--fix-bg); } .tag.tech { color:var(--tech); background:var(--tech-bg); }
+  li b { font-weight:700; }
+  li .d { color:var(--muted); }
+  .cta { text-align:center; margin-top:28px; }
+  .cta a { display:inline-block; text-decoration:none; background:var(--violet); color:#fff; font-weight:800; font-size:15px;
+    padding:13px 30px; border-radius:16px; box-shadow:0 6px 0 var(--violet-d); transition:.12s; }
+  .cta a:active { transform:translateY(4px); box-shadow:0 2px 0 var(--violet-d); }
+  footer { text-align:center; color:var(--muted); font-size:12px; margin-top:26px; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#191428; --card:#221b38; --ink:#f0ebff; --muted:#a99fce; --line:#332a52;
+    }
+    :root:not([data-theme="light"]) body { background:radial-gradient(1200px 600px at 50% -10%, #241a44 0%, var(--bg) 60%); }
+    :root:not([data-theme="light"]) ul.changes li { border-top-color:#2c2448; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="icon-192.png" alt="Mon Tamagotchi" />
+    <h1>Mon Tamagotchi — Nouveautés</h1>
+    <p class="lead">Toutes les fonctionnalités et améliorations du jeu, de la première créature au compagnon connecté qui te réclame des câlins. 💜</p>
+    <div class="stats">
+      <div class="stat"><b>6</b><span>stades d'évolution</span></div>
+      <div class="stat"><b>10</b><span>aliments</span></div>
+      <div class="stat"><b>9</b><span>objets & déco</span></div>
+      <div class="stat"><b>∞</b><span>câlins</span></div>
+    </div>
+  </header>
+
+  <div class="timeline">
+
+    <section class="rel">
+      <div class="rel-head"><span class="v">v1.4</span><h2>Équilibrage &amp; immersion</h2><span class="date">Sept. 2026</span></div>
+      <p class="desc">Le jeu prend de la profondeur : progression rééquilibrée, vrais sprites partout, et des notifications qui te préviennent même l'application fermée.</p>
+      <ul class="changes">
+        <li><span class="tag fix">Correctif</span><span><b>Fin des morts au rechargement.</b> <span class="d">La décroissance des jauges était réglée en « démo » (trop rapide) face à une évolution sur ~10 jours : recharger vidait tout d'un coup. Rythme désormais réaliste.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Plusieurs aliments</b> <span class="d">— un menu de 10 plats aux effets différents ; chaque compagnon a un plat préféré à découvrir (bonus de bonheur).</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Ramasser les crottes en tapant dessus</b> <span class="d">— plus besoin de tout laver, un simple tap suffit (et rapporte une pièce).</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Application installable (PWA) + notifications push</b> <span class="d">— « Piou a besoin de toi ! » même quand l'app est fermée.</span></span></li>
+        <li><span class="tag imp">Amélioration</span><span><b>Économie &amp; difficulté rééquilibrées</b> <span class="d">— gains et prix ajustés pour une progression plus durable, difficulté réglable.</span></span></li>
+        <li><span class="tag imp">Amélioration</span><span><b>Vrais sprites</b> <span class="d">— accessoires, décorations, crottes et nourriture en illustrations kawaii dédiées.</span></span></li>
+        <li><span class="tag tech">Technique</span><span><b>Anti-triche du classement</b> <span class="d">— l'âge est vérifié côté serveur, impossible à gonfler depuis le navigateur.</span></span></li>
+        <li><span class="tag tech">Technique</span><span><b>Back-office étendu</b> <span class="d">— récompenses, prix, difficulté, durée du mini-jeu et aliments réglables sans toucher au code.</span></span></li>
+      </ul>
+    </section>
+
+    <section class="rel">
+      <div class="rel-head"><span class="v">v1.3</span><h2>Vie &amp; attachement</h2><span class="date">Sept. 2026</span></div>
+      <p class="desc">Le compagnon devient vivant et social : des sons, des jeux, une boutique, et des interactions entre joueurs.</p>
+      <ul class="changes">
+        <li><span class="tag new">Nouveau</span><span><b>Mini-jeu « Jouer »</b> <span class="d">— attrape les gourmandises, évite les bombes ; le bonheur gagné dépend du score.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Boutique &amp; pièces</b> <span class="d">— gagne des pièces en prenant soin de ton pet, achète des accessoires (chapeau, couronne…) et de la déco de chambre.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Visites entre joueurs</b> <span class="d">— va voir le Tamagotchi d'un ami et envoie-lui un câlin.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Classement enrichi</b> <span class="d">— catégories « plus âgés » et « mieux soignés », et profil public de chaque créature.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Sons &amp; alertes de besoin</b> <span class="d">— petits sons pour chaque action, et un badge / une notification quand une jauge est au plus bas.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Écran de retour</b> <span class="d">— un résumé « pendant ton absence » à chaque connexion.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Historique des jauges</b> <span class="d">— la courbe des besoins de ton compagnon dans le temps.</span></span></li>
+      </ul>
+    </section>
+
+    <section class="rel">
+      <div class="rel-head"><span class="v">v1.2</span><h2>Mobile &amp; confort</h2><span class="date">Sept. 2026</span></div>
+      <p class="desc">Une expérience pensée pour le téléphone.</p>
+      <ul class="changes">
+        <li><span class="tag new">Nouveau</span><span><b>Version mobile</b> <span class="d">— l'environnement du Tamagotchi occupe au moins la moitié de l'écran.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Balayage de la chambre</b> <span class="d">— fais glisser ton doigt pour révéler les côtés ; le personnage suit le décor.</span></span></li>
+        <li><span class="tag fix">Correctif</span><span><b>Fin des déformations</b> <span class="d">— la chambre et le personnage ne sont plus étirés sur mobile.</span></span></li>
+      </ul>
+    </section>
+
+    <section class="rel">
+      <div class="rel-head"><span class="v">v1.1</span><h2>Comptes &amp; cloud</h2><span class="date">Sept. 2026</span></div>
+      <p class="desc">Le jeu devient jouable par tout le monde, avec des paramètres persistants.</p>
+      <ul class="changes">
+        <li><span class="tag new">Nouveau</span><span><b>Comptes joueurs</b> <span class="d">— inscription / connexion, ton Tamagotchi sauvegardé dans le cloud.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Multijoueur</b> <span class="d">— chacun élève sa créature, classement commun.</span></span></li>
+        <li><span class="tag tech">Technique</span><span><b>Hébergement en ligne</b> <span class="d">— base de données + serveur, mises à jour automatiques à chaque publication.</span></span></li>
+        <li><span class="tag tech">Technique</span><span><b>Admin protégé</b> <span class="d">— l'espace de configuration est verrouillé par mot de passe.</span></span></li>
+      </ul>
+    </section>
+
+    <section class="rel">
+      <div class="rel-head"><span class="v">v1.0</span><h2>Le compagnon</h2><span class="date">Sept. 2026</span></div>
+      <p class="desc">La base : un Tamagotchi 2D évolué qui vit dans sa chambre.</p>
+      <ul class="changes">
+        <li><span class="tag new">Nouveau</span><span><b>5 besoins en temps réel</b> <span class="d">— faim, bonheur, énergie, propreté, santé.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Actions avec timing</b> <span class="d">— nourrir, jouer, laver, dormir, soigner, câliner : l'effet s'applique à la fin de l'activité.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Évolution en 6 stades</b> <span class="d">— de l'œuf à l'ancien sur ~10 jours, avec des formes spéciales réservées aux bons soins.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Chambre &amp; cycle jour/nuit</b> <span class="d">— l'ambiance suit l'horloge réelle du joueur.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Sprites personnalisés</b> <span class="d">— une créature dessinée à la main pour chaque stade, œuf animé compris.</span></span></li>
+        <li><span class="tag new">Nouveau</span><span><b>Sauvegarde &amp; temps hors-ligne</b> <span class="d">— le pet continue de vivre entre deux visites.</span></span></li>
+        <li><span class="tag tech">Technique</span><span><b>Back-office de configuration</b> <span class="d">— besoins, seuils, actions, stades et positions entièrement paramétrables.</span></span></li>
+      </ul>
+    </section>
+
+  </div>
+
+  <div class="cta"><a href="index.html">🐾 Jouer maintenant</a></div>
+  <footer>Mon Tamagotchi · fait avec 💜</footer>
+</div>
+</body>
+</html>
