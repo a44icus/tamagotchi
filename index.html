@@ -34,6 +34,10 @@
   .hbtn:hover { opacity:1; transform:scale(1.15); }
   .hbtn.off { opacity:.3; }
   #backList .grow { font-weight:800; }
+  #miniGame { padding:0; overflow:hidden; background:#dff1ff; }
+  #mgCanvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block; }
+  .mg-hud { position:absolute; top:12px; left:0; right:0; text-align:center; font-weight:800; font-size:15px; color:#5b3fd6; z-index:2; pointer-events:none; text-shadow:0 1px 0 #fff; }
+  .mg-panel { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:26px; z-index:3; background:rgba(250,246,255,.93); }
 
   .screen { position:relative; border-radius:22px; overflow:hidden;
     box-shadow: inset 0 0 0 4px #d9ccff, inset 0 0 30px rgba(120,90,200,.18); aspect-ratio:1672/941; background:#bfe0ff; }
@@ -171,6 +175,25 @@
       <p id="backSub" style="margin-top:-6px"></p>
       <div class="list" id="backList"></div>
       <button class="go" id="backOk">Prendre soin de lui</button>
+    </div>
+
+    <!-- Mini-jeu « Jouer » : attrape-gourmandises -->
+    <div class="overlay" id="miniGame">
+      <div class="mg-hud"><span id="mgScore">0</span> 🍬 · <span id="mgTime">18</span>s</div>
+      <canvas id="mgCanvas"></canvas>
+      <div class="mg-panel" id="mgIntro">
+        <div style="font-size:44px">🧺</div>
+        <h1>Attrape la gourmandise&nbsp;!</h1>
+        <p>Glisse ton doigt (ou la souris) pour déplacer le panier. Attrape un maximum de bonbons, évite les bombes&nbsp;💣. Plus tu en attrapes, plus ton compagnon est heureux&nbsp;!</p>
+        <button class="go" id="mgStart">C'est parti&nbsp;!</button>
+        <button class="linklike" id="mgCancel">Annuler</button>
+      </div>
+      <div class="mg-panel" id="mgEnd" style="display:none">
+        <div style="font-size:44px">🎉</div>
+        <h1 id="mgEndTitle">Bien joué&nbsp;!</h1>
+        <p id="mgEndTxt"></p>
+        <button class="go" id="mgAgain">Terminer</button>
+      </div>
     </div>
 
     <!-- Connexion / inscription -->
@@ -603,6 +626,11 @@ function actionReady(a) {
 }
 function startAction(a) {
   if (!pet || pet.dead || busy()) return;
+  if (a.id === "play") {   // l'action « Jouer » lance un mini-jeu
+    if (pet.asleep) { floatMsg("Il dort… réveille-le d'abord"); return; }
+    for (const k in (a.require || {})) if (S(k) < a.require[k]) { floatMsg("Pas assez d'énergie 😴"); return; }
+    openMiniGame(a); return;
+  }
   if (a.flags.toggleSleep) { pet.asleep = !pet.asleep; sfx(pet.asleep ? "cuddle" : "ok"); floatMsg(pet.asleep ? "Bonne nuit… 💤" : "Réveil ! ☀️"); save(); return; }
   if (pet.asleep) { floatMsg("Il dort… réveille-le d'abord"); return; }
   if (a.flags.onlyWhenSick && !pet.sick) { floatMsg("En pleine forme ❤️"); return; }
@@ -790,6 +818,91 @@ function showBackReport(offlineMin, before) {
   showOv("backModal");
 }
 $("backOk").onclick = () => hideOv("backModal");
+
+// ============================================================
+//  MINI-JEU « JOUER » — attrape-gourmandises
+// ============================================================
+const MG = { on: false, raf: 0, score: 0, endAt: 0, items: [], basket: 0.5, action: null, w: 0, h: 0, spawnT: 0, flash: 0, dur: 18000 };
+const MG_GOOD = ["🍎", "🍓", "🍬", "🍪", "🧁", "🍩", "🍇", "🍭"];
+const mgc = $("mgCanvas"), mgx = mgc.getContext("2d");
+function sizeMg() {
+  const r = mgc.getBoundingClientRect(); const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  MG.w = r.width; MG.h = r.height; mgc.width = Math.round(r.width * dpr); mgc.height = Math.round(r.height * dpr);
+  mgx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function openMiniGame(a) {
+  MG.action = a; MG.on = false; MG.score = 0; MG.items = []; MG.basket = 0.5;
+  $("mgScore").textContent = "0"; $("mgTime").textContent = Math.round(MG.dur / 1000);
+  $("mgIntro").style.display = ""; $("mgEnd").style.display = "none";
+  showOv("miniGame"); sizeMg();
+}
+function startMg() {
+  unlockAudio(); $("mgIntro").style.display = "none"; $("mgEnd").style.display = "none";
+  MG.on = true; MG.score = 0; MG.items = []; MG.spawnT = 0; MG.endAt = performance.now() + MG.dur;
+  $("mgScore").textContent = "0"; sizeMg();
+  cancelAnimationFrame(MG.raf); MG.raf = requestAnimationFrame(mgFrame);
+}
+function mgSetBasket(e) { const r = mgc.getBoundingClientRect(); MG.basket = Math.max(0.06, Math.min(0.94, (e.clientX - r.left) / r.width)); }
+mgc.addEventListener("pointerdown", (e) => { if (MG.on) { mgSetBasket(e); try { mgc.setPointerCapture(e.pointerId); } catch {} } });
+mgc.addEventListener("pointermove", (e) => { if (MG.on) mgSetBasket(e); });
+window.addEventListener("keydown", (e) => {
+  if (!MG.on) return;
+  if (e.key === "ArrowLeft") MG.basket = Math.max(0.06, MG.basket - 0.07);
+  else if (e.key === "ArrowRight") MG.basket = Math.min(0.94, MG.basket + 0.07);
+});
+window.addEventListener("resize", () => { if ($("miniGame").classList.contains("show")) sizeMg(); });
+function mgFrame(now) {
+  if (!MG.on) return;
+  const W = MG.w, H = MG.h, x = mgx;
+  const remain = Math.max(0, MG.endAt - now);
+  $("mgTime").textContent = Math.ceil(remain / 1000);
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#cdeafe"); g.addColorStop(1, "#eaf7ff");
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  // apparition d'objets, de plus en plus vite
+  MG.spawnT -= 16;
+  if (MG.spawnT <= 0) {
+    MG.spawnT = 640 - Math.min(320, (MG.dur - remain) / 55);
+    const bomb = Math.random() < 0.17;
+    MG.items.push({ x: 0.08 + Math.random() * 0.84, y: -0.06, v: 0.16 + Math.random() * 0.16, bomb, e: bomb ? "💣" : MG_GOOD[(Math.random() * MG_GOOD.length) | 0], done: false });
+  }
+  const bx = MG.basket * W, by = H - 40;
+  x.textAlign = "center"; x.textBaseline = "middle";
+  x.font = Math.round(H * 0.08) + "px serif";
+  const dt = 16 / 1000;
+  for (const it of MG.items) {
+    it.y += it.v * dt;
+    const iy = it.y * H, ix = it.x * W;
+    if (!it.done && iy > by - 34 && iy < by + 26 && Math.abs(ix - bx) < W * 0.1) {
+      it.done = true;
+      if (it.bomb) { MG.score = Math.max(0, MG.score - 2); MG.flash = now + 140; sfx("alert"); }
+      else { MG.score++; sfx("coin"); }
+      $("mgScore").textContent = MG.score; continue;
+    }
+    if (it.y > 1.12) it.done = true;
+    if (!it.done) x.fillText(it.e, ix, iy);
+  }
+  MG.items = MG.items.filter(it => !it.done);
+  x.font = "36px serif"; x.fillText("🧺", bx, by);
+  if (now < MG.flash) { x.fillStyle = "rgba(229,72,77,.22)"; x.fillRect(0, 0, W, H); }
+  if (remain <= 0) { endMg(); return; }
+  MG.raf = requestAnimationFrame(mgFrame);
+}
+function endMg() {
+  MG.on = false; cancelAnimationFrame(MG.raf);
+  const a = MG.action || CFG.actions.find(v => v.id === "play") || { effects: {} };
+  const funGain = Math.min(48, MG.score * 3);
+  for (const k in (a.effects || {})) if (k !== "fun" && a.effects[k] < 0) setS(k, S(k) + a.effects[k]);  // coût (énergie/faim)
+  setS("fun", S("fun") + funGain);
+  save(); updateUI();
+  $("mgEndTitle").textContent = MG.score >= 12 ? "Incroyable ! 🌟" : MG.score >= 6 ? "Bien joué ! 🎉" : "C'était chouette 🙂";
+  $("mgEndTxt").textContent = "Score : " + MG.score + " · Bonheur +" + funGain;
+  $("mgEnd").style.display = "";
+  sfx(MG.score >= 6 ? "evolve" : "play");
+  try { setPose("dance", 1600); burst(a.fx, Math.min(12, 4 + MG.score)); } catch {}
+}
+$("mgStart").onclick = startMg;
+$("mgAgain").onclick = () => { hideOv("miniGame"); };
+$("mgCancel").onclick = () => { MG.on = false; cancelAnimationFrame(MG.raf); hideOv("miniGame"); };
 
 // ============================================================
 //  BOUCLES
