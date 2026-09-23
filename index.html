@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Mon Tamagotchi</title>
+<style>
+  :root {
+    --bg1:#f4e9ff; --bg2:#e3f0ff;
+    --ink:#3a2f4a; --card:#ffffff;
+    --hunger:#ff8a5b; --fun:#ffd23f; --energy:#5bc0ff; --hygiene:#4cd4b0; --health:#ff6b8a;
+    --btn:#8a6cff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color:var(--ink);
+    background: radial-gradient(120% 120% at 50% 0%, var(--bg1), var(--bg2));
+    display:flex; align-items:center; justify-content:center; min-height:100%; padding:14px; overflow:hidden;
+  }
+  .device {
+    width:min(460px, 96vw);
+    background:linear-gradient(160deg,#fff,#f3ecff);
+    border-radius:34px; box-shadow:0 24px 60px rgba(90,60,140,.28), inset 0 2px 0 #fff;
+    padding:16px 16px 20px; position:relative;
+  }
+  .head { display:flex; align-items:center; justify-content:space-between; padding:2px 6px 10px; }
+  .name { font-weight:800; font-size:18px; display:flex; align-items:center; gap:6px; }
+  .head-right { display:flex; align-items:center; gap:8px; }
+  .stage { font-size:12px; font-weight:700; color:#7a6ca0; background:#efe8ff; padding:4px 10px; border-radius:999px; }
+  .admin-link { text-decoration:none; font-size:17px; opacity:.6; transition:.15s; }
+  .admin-link:hover { opacity:1; transform:rotate(40deg); }
+
+  .screen { position:relative; border-radius:22px; overflow:hidden;
+    box-shadow: inset 0 0 0 4px #d9ccff, inset 0 0 30px rgba(120,90,200,.18); aspect-ratio:1672/941; background:#bfe0ff; }
+  canvas { display:block; width:100%; height:100%; }
+  #float { position:absolute; left:50%; top:14%; transform:translateX(-50%); font-weight:800; font-size:15px;
+    color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.35); pointer-events:none; opacity:0; transition:opacity .25s, top .5s; }
+
+  /* barre de progression d'activité */
+  #progress { position:absolute; left:50%; bottom:12px; transform:translateX(-50%); width:74%; display:none; text-align:center; }
+  #progress.show { display:block; }
+  #progress .pbar { height:14px; border-radius:8px; background:rgba(255,255,255,.35); overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.2); }
+  #progress .pbar span { display:block; height:100%; width:0%; background:linear-gradient(90deg,#7dd3fc,#8a6cff); }
+  #progress .plabel { margin-top:4px; font-size:12px; font-weight:800; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.4); }
+
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; margin:14px 4px 4px; }
+  .stat { display:flex; align-items:center; gap:8px; }
+  .stat img.ico { width:22px; height:22px; object-fit:contain; }
+  .stat .track { flex:1; height:12px; border-radius:8px; background:#eae3f7; overflow:hidden; }
+  .stat .fill { height:100%; width:100%; border-radius:8px; transition:width .3s ease; }
+  .stat .lbl { font-size:10px; font-weight:700; color:#8a7fb0; width:52px; }
+  .stat.wide { grid-column:1/-1; }
+
+  .actions { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px; }
+  .act { border:none; cursor:pointer; border-radius:16px; padding:12px 6px 9px; background:#fff;
+    box-shadow:0 4px 0 #e2d8f7, 0 6px 14px rgba(120,90,200,.14); display:flex; flex-direction:column; align-items:center; gap:4px;
+    font-weight:700; font-size:11px; color:#6a5b95; transition:transform .06s, box-shadow .06s; }
+  .act img.e { width:34px; height:34px; object-fit:contain; }
+  .act:active { transform:translateY(4px); box-shadow:0 0 0 #e2d8f7, 0 3px 8px rgba(120,90,200,.14); }
+  .act:disabled { opacity:.38; cursor:not-allowed; }
+
+  .footer { text-align:center; margin-top:12px; }
+  .reset { background:none; border:none; color:#b3a7d0; font-size:11px; cursor:pointer; text-decoration:underline; }
+
+  .overlay { position:absolute; inset:0; border-radius:34px; z-index:20; background:rgba(250,246,255,.94);
+    backdrop-filter:blur(3px); display:none; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center; padding:30px; }
+  .overlay.show { display:flex; }
+  .overlay h1 { font-size:24px; }
+  .overlay p { font-size:13px; color:#7a6ca0; line-height:1.6; max-width:300px; }
+  .overlay .egg { font-size:64px; animation:wobble 1.6s ease-in-out infinite; }
+  @keyframes wobble { 0%,100%{transform:rotate(-6deg)} 50%{transform:rotate(6deg)} }
+  input#nameIn { border:2px solid #d9ccff; border-radius:12px; padding:11px 14px; font-size:15px; text-align:center;
+    width:220px; outline:none; font-family:inherit; font-weight:700; color:var(--ink); }
+  .go { border:none; cursor:pointer; background:var(--btn); color:#fff; font-weight:800; font-size:15px; padding:12px 26px;
+    border-radius:14px; box-shadow:0 5px 0 #6b4fd6; transition:transform .06s, box-shadow .06s; }
+  .go:active { transform:translateY(4px); box-shadow:0 1px 0 #6b4fd6; }
+  .overlay input { border:2px solid #d9ccff; border-radius:12px; padding:11px 14px; font-size:14px; width:240px; outline:none; font-family:inherit; color:var(--ink); }
+  .overlay .linklike { background:none; border:none; color:#8a6cff; cursor:pointer; font-size:13px; text-decoration:underline; font-weight:700; }
+  .overlay .err { color:#e5484d; font-size:12px; font-weight:700; min-height:16px; }
+  .overlay .list { width:100%; max-width:320px; max-height:230px; overflow:auto; display:flex; flex-direction:column; gap:8px; }
+  .rowitem { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid #eadff8; border-radius:12px; padding:9px 12px; text-align:left; }
+  .rowitem .grow { flex:1; font-size:13px; font-weight:700; }
+  .rowitem .muted { color:#9a8fc0; font-weight:600; font-size:11px; }
+  .rowitem button { border:none; border-radius:8px; padding:5px 10px; font-weight:700; font-size:12px; cursor:pointer; }
+  .rowitem .play { background:#e7fff5; color:#28b487; } .rowitem .del { background:#ffe9ea; color:#e5484d; }
+  .rank { width:22px; font-weight:800; color:#8a6cff; text-align:center; }
+  .closeX { position:absolute; top:14px; right:16px; background:none; border:none; font-size:20px; cursor:pointer; color:#9a8fc0; }
+</style>
+</head>
+<body>
+  <div class="device">
+    <div class="head">
+      <div class="name">🐾 <span id="petName">…</span></div>
+      <div class="head-right">
+        <div class="stage"><span id="stageTxt">Œuf</span> · <span id="ageTxt">0 min</span></div>
+        <button class="admin-link" id="accountBtn" title="Mon compte" style="background:none;border:none;cursor:pointer">👤</button>
+        <a class="admin-link" href="admin.html" title="Espace admin">⚙️</a>
+      </div>
+    </div>
+
+    <div class="screen">
+      <canvas id="cv"></canvas>
+      <div id="float"></div>
+      <div id="progress"><div class="pbar"><span id="pfill"></span></div><div class="plabel" id="plabel"></div></div>
+    </div>
+
+    <div class="stats" id="statsBars"></div>
+    <div class="actions" id="actionBtns"></div>
+
+    <div class="footer"><button class="reset" id="resetBtn">Recommencer (nouvel œuf)</button></div>
+
+    <div class="overlay" id="birth">
+      <div class="egg">🥚</div>
+      <h1>Un œuf a éclos&nbsp;!</h1>
+      <p>Donne un petit nom à ta créature. Prends bien soin d'elle&nbsp;: elle grandit avec le temps et selon tes soins.</p>
+      <input id="nameIn" placeholder="Son nom…" maxlength="14" />
+      <button class="go" id="hatchBtn">C'est parti&nbsp;!</button>
+    </div>
+
+    <div class="overlay" id="dead">
+      <div style="font-size:60px">👻</div>
+      <h1 id="deadTitle">Oh non…</h1>
+      <p id="deadTxt"></p>
+      <button class="go" id="againBtn">Adopter un nouvel œuf</button>
+    </div>
+
+    <!-- Connexion / inscription -->
+    <div class="overlay" id="auth">
+      <div style="font-size:44px">🐣</div>
+      <h1 id="authTitle">Connexion</h1>
+      <p style="margin-top:-6px">Connecte-toi pour sauvegarder ton Tamagotchi dans le cloud et apparaître au classement.</p>
+      <input id="authUser" placeholder="Pseudo" maxlength="20" style="display:none" />
+      <input id="authEmail" type="email" placeholder="Email" />
+      <input id="authPass" type="password" placeholder="Mot de passe (6+ car.)" />
+      <div class="err" id="authErr"></div>
+      <button class="go" id="authGo">Se connecter</button>
+      <button class="linklike" id="authToggle">Pas de compte ? Créer un compte</button>
+      <button class="linklike" id="authGuest" style="opacity:.8">Jouer sans compte (local)</button>
+    </div>
+
+    <!-- Mon compte -->
+    <div class="overlay" id="account">
+      <button class="closeX" data-close="account">✕</button>
+      <div style="font-size:40px">👤</div>
+      <h1 id="accName">Mon compte</h1>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+        <button class="go" id="btnPets">🐾 Mes Tamagotchis</button>
+        <button class="go" id="btnLb" style="background:linear-gradient(90deg,#ffd23f,#ff8a5b);box-shadow:0 5px 0 #d98a1b">🏆 Classement</button>
+      </div>
+      <button class="linklike" id="btnLogout">Se déconnecter</button>
+    </div>
+
+    <!-- Mes Tamagotchis -->
+    <div class="overlay" id="petsModal">
+      <button class="closeX" data-close="petsModal">✕</button>
+      <h1>🐾 Mes Tamagotchis</h1>
+      <div class="list" id="petsList"></div>
+      <button class="go" id="btnNewPet">＋ Nouveau Tamagotchi</button>
+    </div>
+
+    <!-- Classement -->
+    <div class="overlay" id="lbModal">
+      <button class="closeX" data-close="lbModal">✕</button>
+      <h1>🏆 Classement</h1>
+      <p style="margin-top:-6px">Les Tamagotchis vivants les plus âgés.</p>
+      <div class="list" id="lbList"></div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="tama-config.js"></script>
+<script src="tama-cloud.js"></script>
+<script>
+"use strict";
+// ============================================================
+//  MON TAMAGOTCHI — piloté par la config (voir admin.html)
+//  Activités avec durée + effet appliqué à la fin. Cloud Supabase.
+// ============================================================
+let CFG = TAMA.load();   // provisoire : remplacé par la config cloud au démarrage
+let MODE = "guest";       // "guest" (localStorage) ou "cloud" (Supabase)
+let activePetId = null;   // id du Tamagotchi cloud actif
+let cloudDirty = false;
+let SPRITE_BASE = CFG.kitBase;
+const SAVE_KEY = "tamagotchi_save_v2";
+
+// ---------- Sprites ----------
+const IMG = {};
+function loadImg(rel) { if (!rel) return null; if (IMG[rel]) return IMG[rel]; const i = new Image(); i.src = SPRITE_BASE + rel; IMG[rel] = i; return i; }
+function collectPaths() {
+  const s = new Set();
+  CFG.stages.forEach(st => { for (const k in st.sprites) { const v = st.sprites[k]; if (Array.isArray(v)) v.forEach(p => s.add(p)); else if (v) s.add(v); } });
+  CFG.needs.forEach(n => n.icon && s.add(n.icon));
+  CFG.actions.forEach(a => { if (a.icon) s.add(a.icon); if (a.fx) s.add(a.fx); });
+  if (CFG.evolveFx) s.add(CFG.evolveFx);
+  if (CFG.eggSheet && CFG.eggSheet.file) s.add(CFG.eggSheet.file);
+  if (CFG.room) ["morning", "day", "evening", "night"].forEach(k => CFG.room[k] && s.add(CFG.room[k]));
+  return s;
+}
+function preloadAll() { collectPaths().forEach(loadImg); }
+const ready = (img) => img && img.complete && img.naturalWidth > 0;
+preloadAll();
+
+// ---------- État ----------
+let pet = null;
+function newPet(name) {
+  const now = Date.now();
+  const stats = {};
+  CFG.needs.forEach(n => stats[n.key] = n.start);
+  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0 };
+}
+function migrate(p) {
+  if (!p.stats) { // ancien format à plat
+    p.stats = { hunger: p.hunger, fun: p.fun, energy: p.energy, hygiene: p.hygiene, health: p.health };
+  }
+  CFG.needs.forEach(n => { if (typeof p.stats[n.key] !== "number") p.stats[n.key] = n.start; });
+  if (!p.poops) p.poops = [];
+  if (typeof p.careSum !== "number") p.careSum = 0;
+  if (typeof p.careTicks !== "number") p.careTicks = 0;
+  return p;
+}
+const S = (k) => pet.stats[k];
+const setS = (k, v) => pet.stats[k] = clamp(v);
+const clamp = (v) => Math.max(0, Math.min(100, v));
+
+// ---------- Sauvegarde (cloud ou local) ----------
+function save() {
+  if (!pet) return;
+  if (MODE === "cloud" && activePetId) {
+    cloudDirty = true;
+    try { localStorage.setItem("tama_cache_" + activePetId, JSON.stringify(pet)); } catch {}
+  } else {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(pet)); } catch {}
+  }
+}
+function load() { try { const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch { return null; } }
+function petSummary() {
+  const st = currentStage();
+  return { stage: st.key, stageLabel: st.label, ageText: fmtAge(ageMin()), care: +careQuality().toFixed(2), dead: !!pet.dead };
+}
+async function cloudFlush() {
+  if (MODE === "cloud" && activePetId && cloudDirty && pet) {
+    cloudDirty = false;
+    try { await CLOUD.savePet(activePetId, pet, Math.round(ageMin()), petSummary()); } catch (e) {}
+  }
+}
+
+// ---------- Stades ----------
+function ageMin() { return (Date.now() - pet.birth) / 60000; }
+function careQuality() { return pet.careTicks ? pet.careSum / pet.careTicks / 100 : 0.75; }  // 0..1
+function currentStage() {
+  if (pet.dead) return CFG.stages[0];
+  const a = ageMin(), cq = careQuality();
+  let cur = CFG.stages[0];
+  for (const st of CFG.stages) {
+    if (a < st.fromMin) continue;
+    if (st.requireCare && cq < st.requireCare) continue;   // forme spéciale réservée aux bons soins
+    cur = st;
+  }
+  return cur;
+}
+
+// ---------- Simulation (temps réel + hors-ligne) ----------
+function simulate(minutes) {
+  if (pet.dead) return;
+  const T = CFG.thresholds, sim = CFG.sim;
+  const decay = {}; CFG.needs.forEach(n => decay[n.key] = n.decayPerMin || 0);
+  const step = 0.25;
+  let remain = Math.min(minutes, sim.offlineCapMin);
+  while (remain > 0) {
+    const dm = Math.min(step, remain); remain -= dm;
+    if (pet.asleep) {
+      setS("energy", S("energy") + sim.sleepEnergyPerMin * dm);
+      setS("hunger", S("hunger") - decay.hunger * 0.5 * dm);
+      setS("hygiene", S("hygiene") - decay.hygiene * 0.4 * dm);
+      if (S("energy") >= 100) pet.asleep = false;
+    } else {
+      setS("hunger", S("hunger") - decay.hunger * dm);
+      setS("fun", S("fun") - decay.fun * dm);
+      setS("energy", S("energy") - decay.energy * dm);
+      setS("hygiene", S("hygiene") - decay.hygiene * dm);
+    }
+    if (!pet.asleep && currentStage().key !== "egg") {
+      pet.poopTimer += dm;
+      if (pet.poopTimer >= sim.poopEveryMin) {
+        pet.poopTimer = 0;
+        if (pet.poops.length < 4) pet.poops.push({ x: 0.15 + Math.random() * 0.7 });
+        setS("hygiene", S("hygiene") - 8);
+      }
+    }
+    if (!pet.sick) {
+      const risk = (S("hygiene") < 25 ? 0.03 : 0) + (S("hunger") < 15 ? 0.03 : 0) + (pet.poops.length >= 3 ? 0.02 : 0);
+      if (Math.random() < risk * dm * 4) pet.sick = true;
+    }
+    let hDelta = 0;
+    if (S("hunger") <= 0) hDelta -= 6;
+    if (S("hygiene") <= 0) hDelta -= 4;
+    if (pet.sick) hDelta -= 5;
+    if (!pet.sick && S("hunger") > 40 && S("hygiene") > 40 && S("fun") > 30) hDelta += 3;
+    setS("health", S("health") + hDelta * dm);
+    pet.careSum += (S("hunger") + S("fun") + S("hygiene") + S("health")) / 4; pet.careTicks++;   // qualité de soin
+    if (S("health") <= 0) { die(pet.sick ? "maladie" : (S("hunger") <= 0 ? "faim" : "négligence")); return; }
+  }
+}
+function die(reason) {
+  pet.dead = true; pet.deadReason = reason;
+  const txt = {
+    faim: "Elle a eu trop faim… pense à la nourrir régulièrement.",
+    maladie: "La maladie a eu raison d'elle. Un petit 💊 à temps l'aurait sauvée.",
+    négligence: "Elle manquait de soins. Chaque câlin compte 💜",
+  };
+  document.getElementById("deadTxt").textContent = (txt[reason] || "Elle nous a quittés.") + " Elle a vécu " + fmtAge(ageMin()) + ".";
+  document.getElementById("dead").classList.add("show");
+  save();
+}
+
+// ============================================================
+//  RENDU (Canvas)
+// ============================================================
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  const r = cv.getBoundingClientRect(); DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = r.width; H = r.height; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener("resize", resize);
+const creature = { x: 0.5, tx: 0.5, dir: 1 };
+
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function cloud(x, y, s) { ctx.beginPath(); ctx.arc(x, y, s, 0, 7); ctx.arc(x + s, y + 3, s * .8, 0, 7); ctx.arc(x - s, y + 3, s * .7, 0, 7); ctx.fill(); }
+function drawPoop(x, y) {
+  ctx.fillStyle = "#7a5230";
+  ctx.beginPath(); ctx.ellipse(x, y, 9, 5, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, y - 4, 6, 4, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, y - 8, 3.5, 3, 0, 0, 7); ctx.fill();
+}
+function drawRoomProcedural() {
+  const night = pet.asleep, wallH = H * 0.66;
+  let g = ctx.createLinearGradient(0, 0, 0, wallH);
+  if (night) { g.addColorStop(0, "#2b2c55"); g.addColorStop(1, "#3d3f75"); } else { g.addColorStop(0, "#ffe9c2"); g.addColorStop(1, "#ffd6e8"); }
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, wallH);
+  let fg = ctx.createLinearGradient(0, wallH, 0, H);
+  if (night) { fg.addColorStop(0, "#5a4a7a"); fg.addColorStop(1, "#463a63"); } else { fg.addColorStop(0, "#c9a678"); fg.addColorStop(1, "#b08b5e"); }
+  ctx.fillStyle = fg; ctx.fillRect(0, wallH, W, H - wallH);
+  ctx.fillStyle = night ? "#6a5a90" : "#e7c9a0"; ctx.fillRect(0, wallH - 6, W, 6);
+  // fenêtre
+  const wx = W * .62, wy = H * .12, ww = W * .28, wh = H * .3;
+  ctx.fillStyle = "#fff"; roundRect(wx - 6, wy - 6, ww + 12, wh + 12, 10); ctx.fill();
+  let sky = ctx.createLinearGradient(0, wy, 0, wy + wh);
+  if (night) { sky.addColorStop(0, "#0d1030"); sky.addColorStop(1, "#26224e"); } else { sky.addColorStop(0, "#8fd0ff"); sky.addColorStop(1, "#d6f0ff"); }
+  ctx.fillStyle = sky; roundRect(wx, wy, ww, wh, 6); ctx.fill();
+  if (night) { ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(wx + ww * .7, wy + wh * .3, 10, 0, 7); ctx.fill(); for (let i = 0; i < 6; i++) { ctx.fillRect(wx + ((i * 53) % ww), wy + ((i * 37) % wh), 2, 2); } }
+  else { ctx.fillStyle = "#ffe27a"; ctx.beginPath(); ctx.arc(wx + ww * .28, wy + wh * .3, 13, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; cloud(wx + ww * .6, wy + wh * .55, 14); }
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(wx + ww / 2, wy); ctx.lineTo(wx + ww / 2, wy + wh); ctx.moveTo(wx, wy + wh / 2); ctx.lineTo(wx + ww, wy + wh / 2); ctx.stroke();
+  // tapis / lit / gamelle
+  ctx.fillStyle = night ? "#7a6aa0" : "#e08fae"; ctx.globalAlpha = .55; ctx.beginPath(); ctx.ellipse(W * .45, H * .86, W * .34, H * .09, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+  ctx.fillStyle = night ? "#8a79b5" : "#b38ee0"; roundRect(W * .03, wallH - 6, W * .2, H * .16, 8); ctx.fill();
+  ctx.fillStyle = "#fff"; roundRect(W * .045, wallH - 2, W * .09, H * .05, 6); ctx.fill();
+  ctx.fillStyle = "#8a5a3a"; ctx.beginPath(); ctx.ellipse(W * .9, H * .9, 22, 8, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#e0a060"; ctx.beginPath(); ctx.ellipse(W * .9, H * .89, 16, 5, 0, 0, 7); ctx.fill();
+}
+
+// ---- fond de chambre selon l'heure réelle du joueur ----
+function currentRoom() {
+  const R = CFG.room; if (!R) return null;
+  const h = new Date().getHours();
+  if (h >= R.hours.night || h < R.hours.morning) return R.night;
+  if (h >= R.hours.evening) return R.evening;
+  if (h >= R.hours.day) return R.day;
+  return R.morning;
+}
+function drawCover(img) {
+  const iw = img.naturalWidth, ih = img.naturalHeight, scale = Math.max(W / iw, H / ih);
+  const dw = iw * scale, dh = ih * scale;
+  ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+}
+function drawRoom() {
+  const bg = currentRoom(), img = bg ? IMG[bg] : null;
+  if (ready(img)) drawCover(img); else drawRoomProcedural();
+  for (const p of pet.poops) drawPoop(p.x * W, H * (0.9 + (p.x % 0.05)));
+  if (pet.asleep) { ctx.fillStyle = "rgba(18,18,55,.42)"; ctx.fillRect(0, 0, W, H); }  // "lumière éteinte"
+}
+
+// ---- humeur ----
+function mood() {
+  const T = CFG.thresholds;
+  if (pet.dead) return "dead";
+  if (pet.asleep) return "sleeping";
+  if (pet.sick) return "sick";
+  if (S("hunger") < T.hungerLow) return "hungry";
+  if (S("health") < T.healthLow) return "crying";
+  if (S("fun") < T.funLow) return "sad";
+  if (S("energy") < T.energyLow) return "exhausted";
+  if (S("fun") > T.happyFun && S("hunger") > T.happyHunger) return "happy";
+  return "idle";
+}
+
+// ---- sprites / poses / activité ----
+const anim = { pose: null, until: 0, walkT: 0 };
+function setPose(p, ms) { anim.pose = p; anim.until = performance.now() + ms; }
+function posingNow() { return anim.pose && performance.now() < anim.until; }
+function busy() { return !!activity; }
+
+function resolveState(stateKey) {
+  const stg = currentStage(); let key = stateKey, guard = 0, s = stg.sprites[key];
+  while (!s && CFG.fallback[key] && guard++ < 6) { key = CFG.fallback[key]; s = stg.sprites[key]; }
+  return s || stg.sprites.idle;      // chemin, ou tableau (walk)
+}
+function stateImg(stateKey) { const s = resolveState(stateKey); return IMG[Array.isArray(s) ? s[0] : s]; }
+
+function pickSprite() {
+  const stg = currentStage();
+  if (stg.key === "egg") return null;
+  if (activity) return stateImg(activity.action.pose);
+  if (posingNow()) return stateImg(anim.pose);
+  if (pet.asleep) return stateImg(CFG.moods.sleeping);
+  const m = mood();
+  const moving = Math.abs(creature.tx - creature.x) > 0.02;
+  if (moving && (m === "idle" || m === "happy")) {
+    const w = resolveState("walk"); const arr = Array.isArray(w) ? w : [w];
+    return IMG[arr[Math.floor(anim.walkT) % arr.length]];
+  }
+  return stateImg(CFG.moods[m] || "idle");
+}
+// ---- œuf (planche découpée en frames) ----
+function drawSheetFrame(img, index, cols, rows, dx, dy, dw, dh) {
+  const cw = img.naturalWidth / cols, ch = img.naturalHeight / rows;
+  const sx = (index % cols) * cw, sy = Math.floor(index / cols) * ch;
+  ctx.drawImage(img, sx, sy, cw, ch, dx, dy, dw, dh);
+}
+function babyAtMin() { const b = CFG.stages.find(s => s.key === "baby"); return b ? b.fromMin : 0.5; }
+function hatchDur() { return Math.max(0.05, Math.min(0.2, babyAtMin() * 0.4)); }
+function eggFrame() {
+  const F = CFG.eggSheet.frames, tLeft = babyAtMin() - ageMin();
+  if (tLeft <= hatchDur()) {                       // séquence d'éclosion
+    const p = Math.max(0, Math.min(0.999, 1 - tLeft / hatchDur()));
+    const seq = ["crack1", "crack2", "hatch1", "hatch2"];
+    return F[seq[Math.floor(p * seq.length)]];
+  }
+  if (pet.sick) return F.sick;
+  if (pet.asleep) return F.sleeping;
+  const T = CFG.thresholds;
+  if (S("hunger") < T.hungerLow) return F.hungry;
+  if (S("hygiene") < 30) return F.dirty;
+  if (S("fun") < T.funLow) return F.scared;
+  if (S("fun") > T.happyFun) return F.happy;
+  return F.idle;
+}
+function drawEggSprite(t) {
+  const img = IMG[CFG.eggSheet.file];
+  if (!ready(img)) { drawCreatureProcedural(t); return; }
+  const stage = currentStage(), baseY = H * 0.84, x = creature.x * W, targetH = H * stage.scale;
+  const hatching = babyAtMin() - ageMin() <= hatchDur();
+  const wob = hatching ? Math.sin(t * 0.03) * 0.07 : Math.sin(t * 0.004) * 0.05;
+  ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(x, baseY + 2, targetH * .3, targetH * .06, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(x, baseY - targetH * 0.42); ctx.rotate(wob);
+  drawSheetFrame(img, eggFrame(), CFG.eggSheet.cols, CFG.eggSheet.rows, -targetH / 2, -targetH / 2, targetH, targetH);
+  ctx.restore();
+}
+
+function drawCreature(t) {
+  const stage = currentStage();
+  if (stage.key === "egg") { drawEggSprite(t); return; }
+  const img = pickSprite();
+  if (!ready(img)) { drawCreatureProcedural(t); return; }
+  const baseY = H * floorY(), x = creature.x * W;
+  const targetH = H * (stage.scale > 1 ? stage.scale / 100 : stage.scale); // tolère échelle en % ou fraction
+  const scale = targetH / img.naturalHeight, w = img.naturalWidth * scale, h = targetH;
+  const hop = pet.asleep || busy() ? 0 : Math.abs(Math.sin(t * 0.004)) * 7;
+  ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(x, baseY + 2, w * .34, h * .05, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(x, baseY - hop); ctx.scale(creature.dir, 1); ctx.drawImage(img, -w / 2, -h, w, h); ctx.restore();
+}
+
+// ---- particules ----
+const particles = [];
+function burst(name, n) {
+  if (!name || W <= 0) return; const img = IMG[name] || loadImg(name); const cx = creature.x * W, cy = H * 0.5;
+  for (let i = 0; i < (n || 6); i++) particles.push({ img, x: cx + (Math.random() - .5) * 100, y: cy + (Math.random() - .3) * 90, vy: -(0.01 + Math.random() * .03), t: 0, life: 700 + Math.random() * 500, s: .35 + Math.random() * .35 });
+}
+function drawParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]; p.t += dt; p.y += p.vy * dt; const k = 1 - p.t / p.life;
+    if (k <= 0) { particles.splice(i, 1); continue; }
+    if (ready(p.img)) { const w = p.img.naturalWidth * p.s, h = p.img.naturalHeight * p.s; ctx.globalAlpha = Math.max(0, Math.min(1, k * 1.4)); ctx.drawImage(p.img, p.x - w / 2, p.y - h / 2, w, h); ctx.globalAlpha = 1; }
+  }
+}
+
+// ---- dessin de secours ----
+function drawCreatureProcedural(t) {
+  const stage = currentStage().key, m = mood(), baseY = H * 0.8, x = creature.x * W;
+  const sizeByStage = { egg: 42, baby: 34, child: 44, teen: 54, adult: 66 };
+  const R = sizeByStage[stage] || 48;
+  const hop = pet.asleep ? 0 : Math.abs(Math.sin(t * 0.004)) * (stage === "egg" ? 3 : 8), cy = baseY - R - hop;
+  ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(x, baseY + 4, R * .8, R * .28, 0, 0, 7); ctx.fill();
+  ctx.save(); ctx.translate(x, cy); ctx.scale(creature.dir, 1);
+  if (stage === "egg") { ctx.fillStyle = "#fff7e6"; ctx.beginPath(); ctx.ellipse(0, 0, R * .8, R, 0, 0, 7); ctx.fill(); ctx.restore(); return; }
+  ctx.fillStyle = "#8fd7ff"; ctx.beginPath(); ctx.ellipse(0, 0, R, R * .95, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#eafcff"; ctx.beginPath(); ctx.ellipse(0, R * .22, R * .55, R * .5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#3a2f4a"; ctx.beginPath(); ctx.arc(-R * .32, -R * .1, R * .1, 0, 7); ctx.arc(R * .32, -R * .1, R * .1, 0, 7); ctx.fill();
+  ctx.restore();
+}
+
+// ---- positions fixes par état ----
+function activeStateKey() {
+  if (pet.asleep) return "sleeping";
+  if (activity) return activity.action.pose;
+  if (posingNow()) return anim.pose;
+  return mood();
+}
+function posFor() { return CFG.positions ? CFG.positions[activeStateKey()] : null; }
+function floorY() { const p = posFor(); return (p && typeof p.y === "number") ? p.y : 0.84; }
+
+// ---- déplacement ----
+function wander(dt) {
+  if (pet.dead) return;
+  const p = posFor();
+  if (p && typeof p.x === "number") creature.tx = p.x;              // position définie -> le perso s'y rend
+  else if (currentStage().key === "egg") creature.tx = 0.5;
+  else if (busy() || posingNow()) creature.tx = creature.x;
+  else if (pet.asleep) creature.tx = 0.5;
+  else if (Math.random() < 0.006) creature.tx = 0.34 + Math.random() * 0.32;
+  const d = creature.tx - creature.x;
+  if (Math.abs(d) > 0.005) { const sp = 0.0006 * dt; creature.x += Math.sign(d) * Math.min(Math.abs(d), sp); creature.dir = d > 0 ? 1 : -1; }
+}
+
+// ============================================================
+//  ACTIVITÉS AVEC DURÉE
+// ============================================================
+let activity = null;              // { action, start, duration }
+const cooldowns = {};             // id -> timestamp de fin
+function actionReady(a) {
+  if (!pet || pet.dead || busy()) return false;
+  if (a.flags.toggleSleep) return true;
+  if (pet.asleep) return false;
+  if (a.flags.onlyWhenSick && !pet.sick) return false;
+  if (cooldowns[a.id] && performance.now() < cooldowns[a.id]) return false;
+  for (const k in (a.require || {})) if (S(k) < a.require[k]) return false;
+  return true;
+}
+function startAction(a) {
+  if (!pet || pet.dead || busy()) return;
+  if (a.flags.toggleSleep) { pet.asleep = !pet.asleep; floatMsg(pet.asleep ? "Bonne nuit… 💤" : "Réveil ! ☀️"); save(); return; }
+  if (pet.asleep) { floatMsg("Il dort… réveille-le d'abord"); return; }
+  if (a.flags.onlyWhenSick && !pet.sick) { floatMsg("En pleine forme ❤️"); return; }
+  if (cooldowns[a.id] && performance.now() < cooldowns[a.id]) { floatMsg("Encore un instant…"); return; }
+  for (const k in (a.require || {})) if (S(k) < a.require[k]) { floatMsg("Pas assez d'énergie 😴"); return; }
+  if (!a.duration || a.duration <= 0) { finishAction(a); return; }   // action instantanée éventuelle
+  activity = { action: a, start: performance.now(), duration: a.duration };
+  updateButtonsState();
+}
+function finishAction(a) {
+  for (const k in (a.effects || {})) setS(k, S(k) + a.effects[k]);
+  if (a.flags.fillHygiene) setS("hygiene", 100);
+  if (a.flags.clearPoops) pet.poops = [];
+  if (a.flags.curesSick) pet.sick = false;
+  burst(a.fx, a.fxCount);
+  floatMsg(a.label + " ✓");
+  if (a.cooldown) cooldowns[a.id] = performance.now() + a.cooldown;
+  activity = null;
+  updateUI(); save();
+}
+function tickActivity() {
+  if (!activity) { document.getElementById("progress").classList.remove("show"); return; }
+  const now = performance.now(), k = (now - activity.start) / activity.duration;
+  const prog = document.getElementById("progress");
+  prog.classList.add("show");
+  document.getElementById("pfill").style.width = Math.min(100, k * 100) + "%";
+  document.getElementById("plabel").textContent = activity.action.label + "…";
+  if (k >= 1) { prog.classList.remove("show"); finishAction(activity.action); }
+}
+
+// ============================================================
+//  UI DYNAMIQUE (construite depuis la config)
+// ============================================================
+const $ = (id) => document.getElementById(id);
+function buildUI() {
+  // jauges
+  const sb = $("statsBars"); sb.innerHTML = "";
+  CFG.needs.forEach(n => {
+    const wide = n.key === "health" ? " wide" : "";
+    const div = document.createElement("div");
+    div.className = "stat" + wide;
+    div.innerHTML = `<img class="ico" src="${SPRITE_BASE + n.icon}" alt="•"><span class="lbl">${n.label}</span><div class="track"><div class="fill" id="bar_${n.key}" style="background:var(--${n.key},#8a6cff)"></div></div>`;
+    sb.appendChild(div);
+  });
+  // boutons
+  const ab = $("actionBtns"); ab.innerHTML = "";
+  CFG.actions.forEach(a => {
+    const b = document.createElement("button");
+    b.className = "act"; b.dataset.id = a.id;
+    b.innerHTML = `<img class="e" src="${SPRITE_BASE + a.icon}" alt="•"><span class="albl">${a.label}</span>`;
+    b.addEventListener("click", () => { startAction(a); updateUI(); });
+    ab.appendChild(b);
+  });
+}
+function updateButtonsState() {
+  document.querySelectorAll(".act").forEach(b => {
+    const a = CFG.actions.find(x => x.id === b.dataset.id); if (!a) return;
+    b.disabled = !actionReady(a);
+    if (a.flags.toggleSleep) b.querySelector(".albl").textContent = pet.asleep ? "Réveiller" : a.label;
+  });
+}
+function setBar(key, v) { const f = $("bar_" + key); if (f) f.style.width = clamp(v) + "%"; }
+function fmtAge(min) {
+  if (min < 60) return Math.floor(min) + " min";
+  const h = Math.floor(min / 60), m = Math.floor(min % 60);
+  if (h < 24) return h + " h " + (m ? m + " min" : "");
+  return Math.floor(h / 24) + " j " + (h % 24) + " h";
+}
+function updateUI() {
+  if (!pet) return;
+  $("petName").textContent = pet.name;
+  $("stageTxt").textContent = currentStage().label;
+  $("ageTxt").textContent = fmtAge(ageMin());
+  CFG.needs.forEach(n => setBar(n.key, S(n.key)));
+  updateButtonsState();
+}
+let floatTimer;
+function floatMsg(txt) { const f = $("float"); f.textContent = txt; f.style.opacity = "1"; f.style.top = "14%"; clearTimeout(floatTimer); floatTimer = setTimeout(() => { f.style.opacity = "0"; f.style.top = "8%"; }, 900); }
+
+// ============================================================
+//  BOUCLES
+// ============================================================
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(now - last, 100); last = now;
+  if (pet) {
+    wander(dt);
+    if (Math.abs(creature.tx - creature.x) > 0.02 && !pet.asleep && !busy() && !posingNow()) anim.walkT += dt * 0.012;
+    tickActivity();
+  }
+  ctx.clearRect(0, 0, W, H);
+  if (pet) { drawRoom(); drawCreature(now); }
+  drawParticles(dt);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+let lastStageSeen = null, flushCtr = 0;
+setInterval(() => {
+  if (!pet) return;
+  if (!pet.dead) {
+    simulate((Date.now() - pet.lastSeen) / 60000);
+    pet.lastSeen = Date.now();
+    const st = currentStage().key;
+    if (lastStageSeen && st !== lastStageSeen && CFG.stages.findIndex(s => s.key === st) > CFG.stages.findIndex(s => s.key === lastStageSeen)) {
+      floatMsg("✨ Évolution : " + currentStage().label + " ✨"); setPose("victory", 2000); burst(CFG.evolveFx, 14);
+    }
+    lastStageSeen = st;
+    updateUI(); save();
+  }
+  if (++flushCtr >= 12) { flushCtr = 0; cloudFlush(); }   // envoi cloud ~toutes les 12 s
+}, 1000);
+
+// recharge la config si l'admin l'a modifiée (autre onglet)
+window.addEventListener("storage", (e) => {
+  if (e.key === TAMA.KEY) { CFG = TAMA.load(); SPRITE_BASE = CFG.kitBase; preloadAll(); buildUI(); updateUI(); floatMsg("⚙️ Config mise à jour"); }
+});
+
+// ---------- Naissance / reset ----------
+function openBirth() { $("birth").classList.add("show"); $("nameIn").value = ""; setTimeout(() => $("nameIn").focus(), 50); }
+async function hatch() {
+  const name = ($("nameIn").value.trim() || "Piou");
+  pet = newPet(name); activity = null;
+  $("birth").classList.remove("show"); $("dead").classList.remove("show");
+  creature.x = creature.tx = 0.5; lastStageSeen = null;
+  updateUI();
+  if (MODE === "cloud") {
+    try { const row = await CLOUD.createPet(name, pet); activePetId = row.id; } catch (e) { floatMsg("⚠️ Sauvegarde cloud impossible"); }
+  } else save();
+}
+$("hatchBtn").addEventListener("click", hatch);
+$("nameIn").addEventListener("keydown", (e) => { if (e.key === "Enter") hatch(); });
+$("againBtn").addEventListener("click", () => { $("dead").classList.remove("show"); if (MODE === "cloud") activePetId = null; openBirth(); });
+$("resetBtn").addEventListener("click", () => {
+  if (!confirm("Repartir d'un nouvel œuf ?")) return;
+  if (MODE === "cloud") { pet = newPet("Piou"); activePetId = null; openBirth(); updateUI(); }
+  else { try { localStorage.removeItem(SAVE_KEY); } catch {} openBirth(); }
+});
+
+// ============================================================
+//  COMPTES / CLOUD (auth, mes Tamagotchis, classement)
+// ============================================================
+const $$ = (id) => document.getElementById(id);
+const showOv = (id) => $$(id).classList.add("show");
+const hideOv = (id) => $$(id).classList.remove("show");
+
+function applyLoadedPet(p) {
+  pet = migrate(p); activity = null;
+  const offline = (Date.now() - pet.lastSeen) / 60000;
+  if (!pet.dead && offline > 0.05) simulate(offline);
+  pet.lastSeen = Date.now(); lastStageSeen = null;
+  creature.x = creature.tx = 0.5;
+  if (pet.dead) die(pet.deadReason);
+  updateUI();
+}
+function enterGuest() {
+  MODE = "guest"; activePetId = null; hideOv("auth");
+  const saved = load();
+  if (saved) applyLoadedPet(saved);
+  else { pet = newPet("Piou"); openBirth(); updateUI(); }
+}
+async function enterCloud() {
+  MODE = "cloud"; hideOv("auth");
+  let pets = [];
+  try { pets = await CLOUD.listPets(); } catch { pets = []; }
+  if (pets.length) { activePetId = pets[0].id; applyLoadedPet(pets[0].state); }
+  else { pet = newPet("Piou"); activePetId = null; openBirth(); updateUI(); }
+}
+
+// ---- écran connexion / inscription ----
+let authSignup = false;
+function refreshAuthMode() {
+  $$("authTitle").textContent = authSignup ? "Créer un compte" : "Connexion";
+  $$("authUser").style.display = authSignup ? "" : "none";
+  $$("authGo").textContent = authSignup ? "Créer mon compte" : "Se connecter";
+  $$("authToggle").textContent = authSignup ? "Déjà un compte ? Se connecter" : "Pas de compte ? Créer un compte";
+  $$("authErr").textContent = "";
+}
+function transErr(m) {
+  if (/Invalid login/i.test(m)) return "Email ou mot de passe incorrect.";
+  if (/already registered/i.test(m)) return "Cet email a déjà un compte.";
+  if (/at least 6|Password should/i.test(m)) return "Mot de passe : 6 caractères minimum.";
+  if (/not confirmed|confirm/i.test(m)) return "Confirme ton email avant de te connecter.";
+  return m;
+}
+$$("authToggle").onclick = () => { authSignup = !authSignup; refreshAuthMode(); };
+$$("authGuest").onclick = () => enterGuest();
+$$("authGo").onclick = async () => {
+  const email = $$("authEmail").value.trim(), pass = $$("authPass").value, user = $$("authUser").value.trim();
+  const err = $$("authErr"); err.textContent = "";
+  if (!email || !pass) { err.textContent = "Email et mot de passe requis."; return; }
+  $$("authGo").disabled = true;
+  try {
+    if (authSignup) {
+      const { data, error } = await CLOUD.signUp(email, pass, user || email.split("@")[0]);
+      if (error) throw error;
+      if (!data.session) { err.textContent = "Compte créé ! Vérifie ton email, puis connecte-toi."; authSignup = false; refreshAuthMode(); $$("authGo").disabled = false; return; }
+    } else {
+      const { error } = await CLOUD.signIn(email, pass); if (error) throw error;
+    }
+    await enterCloud();
+  } catch (e) { err.textContent = transErr(e.message || String(e)); }
+  $$("authGo").disabled = false;
+};
+
+// ---- bouton compte + menus ----
+$$("accountBtn").onclick = async () => {
+  if (MODE === "cloud") { $$("accName").textContent = (await CLOUD.username().catch(() => null)) || "Mon compte"; showOv("account"); }
+  else { authSignup = false; refreshAuthMode(); showOv("auth"); }
+};
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => hideOv(b.dataset.close));
+$$("btnLogout").onclick = async () => { await CLOUD.signOut(); location.reload(); };
+$$("btnPets").onclick = async () => { hideOv("account"); await openPets(); };
+$$("btnLb").onclick = async () => { hideOv("account"); await openLeaderboard(); };
+
+async function openPets() {
+  const list = $$("petsList"); list.innerHTML = "Chargement…"; showOv("petsModal");
+  let pets = [];
+  try { pets = await CLOUD.listPets(); } catch { list.innerHTML = "Erreur de chargement."; return; }
+  list.innerHTML = "";
+  if (!pets.length) { list.innerHTML = "<p class='muted' style='color:#9a8fc0'>Aucun Tamagotchi pour l'instant.</p>"; return; }
+  pets.forEach(p => {
+    const s = p.summary || {};
+    const row = document.createElement("div"); row.className = "rowitem";
+    const info = document.createElement("div"); info.className = "grow";
+    info.innerHTML = `${p.name}<div class="muted">${s.stageLabel || "?"} · ${s.ageText || ""}${s.dead ? " · 💀" : ""}${p.id === activePetId ? " · ▶ actif" : ""}</div>`;
+    const play = document.createElement("button"); play.className = "play"; play.textContent = "Jouer";
+    play.onclick = () => { activePetId = p.id; applyLoadedPet(p.state); hideOv("petsModal"); };
+    const del = document.createElement("button"); del.className = "del"; del.textContent = "🗑";
+    del.onclick = async () => { if (!confirm("Supprimer " + p.name + " ?")) return; try { await CLOUD.deletePet(p.id); } catch {} if (p.id === activePetId) activePetId = null; openPets(); };
+    row.append(info, play, del); list.appendChild(row);
+  });
+}
+$$("btnNewPet").onclick = () => { hideOv("petsModal"); pet = newPet("Piou"); activePetId = null; openBirth(); updateUI(); };
+
+async function openLeaderboard() {
+  const list = $$("lbList"); list.innerHTML = "Chargement…"; showOv("lbModal");
+  let rows = [];
+  try { rows = await CLOUD.leaderboard(); } catch { list.innerHTML = "Erreur."; return; }
+  list.innerHTML = "";
+  if (!rows.length) { list.innerHTML = "<p class='muted' style='color:#9a8fc0'>Personne encore. Sois le premier !</p>"; return; }
+  rows.forEach((r, i) => {
+    const s = r.summary || {};
+    const row = document.createElement("div"); row.className = "rowitem";
+    row.innerHTML = `<div class="rank">${i + 1}</div><div class="grow">${r.pet_name} <span class="muted">par ${r.username}</span><div class="muted">${s.stageLabel || ""} ${s.ageText ? "· " + s.ageText : "· " + r.score + " min"}</div></div>`;
+    list.appendChild(row);
+  });
+}
+
+// ---------- Démarrage ----------
+async function boot() {
+  resize();
+  if (CLOUD.available) { try { CFG = await CLOUD.loadConfig(); } catch {} }
+  SPRITE_BASE = CFG.kitBase; preloadAll(); buildUI();
+  if (!CLOUD.available) { enterGuest(); return; }
+  const user = await CLOUD.currentUser().catch(() => null);
+  if (user) await enterCloud();
+  else { authSignup = false; refreshAuthMode(); showOv("auth"); }
+}
+boot();
+</script>
+</body>
+</html>

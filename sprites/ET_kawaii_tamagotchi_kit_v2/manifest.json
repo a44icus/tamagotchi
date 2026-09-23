@@ -1,0 +1,995 @@
+{
+  "canvas_size": {
+    "width": 512,
+    "height": 512
+  },
+  "format": "PNG RGBA transparent",
+  "folders": {
+    "baby_states": [
+      {
+        "file": "baby_states/01_idle.png",
+        "state": "01_idle",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/02_happy.png",
+        "state": "02_happy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/03_laugh.png",
+        "state": "03_laugh",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/04_sad.png",
+        "state": "04_sad",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/05_crying.png",
+        "state": "05_crying",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/06_angry.png",
+        "state": "06_angry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/07_surprised.png",
+        "state": "07_surprised",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/08_scared.png",
+        "state": "08_scared",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/09_sleepy.png",
+        "state": "09_sleepy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/10_sleeping.png",
+        "state": "10_sleeping",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/11_hungry.png",
+        "state": "11_hungry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/12_eating.png",
+        "state": "12_eating",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/13_sick.png",
+        "state": "13_sick",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/14_dizzy.png",
+        "state": "14_dizzy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_states/15_sitting.png",
+        "state": "15_sitting",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "baby_actions": [
+      {
+        "file": "baby_actions/01_playful_wink.png",
+        "state": "01_playful_wink",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/02_walk_01.png",
+        "state": "02_walk_01",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/03_walk_02.png",
+        "state": "03_walk_02",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/04_walk_03.png",
+        "state": "04_walk_03",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/05_walk_04.png",
+        "state": "05_walk_04",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/06_walk_05.png",
+        "state": "06_walk_05",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/07_walk_06.png",
+        "state": "07_walk_06",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/08_wave.png",
+        "state": "08_wave",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/09_jump.png",
+        "state": "09_jump",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/10_dance.png",
+        "state": "10_dance",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/11_love_power.png",
+        "state": "11_love_power",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/12_victory.png",
+        "state": "12_victory",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/13_exhausted.png",
+        "state": "13_exhausted",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/14_teddy_hug.png",
+        "state": "14_teddy_hug",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "baby_actions/15_bath.png",
+        "state": "15_bath",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "icons": [
+      {
+        "file": "icons/01_heart.png",
+        "state": "01_heart",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/02_food_bowl.png",
+        "state": "02_food_bowl",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/03_candy.png",
+        "state": "03_candy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/04_sleep_zzz.png",
+        "state": "04_sleep_zzz",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/05_soap.png",
+        "state": "05_soap",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/06_game_controller.png",
+        "state": "06_game_controller",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/07_medicine.png",
+        "state": "07_medicine",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/08_sparkles.png",
+        "state": "08_sparkles",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/09_ghost.png",
+        "state": "09_ghost",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/10_magic_orb.png",
+        "state": "10_magic_orb",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/11_small_sparkle.png",
+        "state": "11_small_sparkle",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/12_big_sparkle.png",
+        "state": "12_big_sparkle",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/13_heart_glow.png",
+        "state": "13_heart_glow",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/14_burst.png",
+        "state": "14_burst",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "icons/15_light_trail.png",
+        "state": "15_light_trail",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "teen": [
+      {
+        "file": "teen/01_idle.png",
+        "state": "01_idle",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/02_happy.png",
+        "state": "02_happy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/03_laugh.png",
+        "state": "03_laugh",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/04_sad.png",
+        "state": "04_sad",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/05_crying.png",
+        "state": "05_crying",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/06_angry.png",
+        "state": "06_angry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/07_surprised.png",
+        "state": "07_surprised",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/08_sleepy.png",
+        "state": "08_sleepy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/09_sleeping.png",
+        "state": "09_sleeping",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/10_hungry.png",
+        "state": "10_hungry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/11_eating.png",
+        "state": "11_eating",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/12_sick.png",
+        "state": "12_sick",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/13_walk.png",
+        "state": "13_walk",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/14_victory.png",
+        "state": "14_victory",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "teen/15_bath.png",
+        "state": "15_bath",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "adult": [
+      {
+        "file": "adult/01_idle.png",
+        "state": "01_idle",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/02_happy.png",
+        "state": "02_happy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/03_laugh.png",
+        "state": "03_laugh",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/04_sad.png",
+        "state": "04_sad",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/05_crying.png",
+        "state": "05_crying",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/06_angry.png",
+        "state": "06_angry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/07_surprised.png",
+        "state": "07_surprised",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/08_sleepy.png",
+        "state": "08_sleepy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/09_sleeping.png",
+        "state": "09_sleeping",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/10_hungry.png",
+        "state": "10_hungry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/11_eating.png",
+        "state": "11_eating",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/12_sick.png",
+        "state": "12_sick",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/13_walk.png",
+        "state": "13_walk",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/14_victory.png",
+        "state": "14_victory",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "adult/15_bath.png",
+        "state": "15_bath",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "elder": [
+      {
+        "file": "elder/01_idle.png",
+        "state": "01_idle",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/02_happy.png",
+        "state": "02_happy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/03_laugh.png",
+        "state": "03_laugh",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/04_sad.png",
+        "state": "04_sad",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/05_crying.png",
+        "state": "05_crying",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/06_angry.png",
+        "state": "06_angry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/07_surprised.png",
+        "state": "07_surprised",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/08_sleepy.png",
+        "state": "08_sleepy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/09_sleeping.png",
+        "state": "09_sleeping",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/10_hungry.png",
+        "state": "10_hungry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/11_eating.png",
+        "state": "11_eating",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/12_sick.png",
+        "state": "12_sick",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/13_walk.png",
+        "state": "13_walk",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/14_victory.png",
+        "state": "14_victory",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "elder/15_bath.png",
+        "state": "15_bath",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "evolved_stage_1": [
+      {
+        "file": "evolved_stage_1/01_idle.png",
+        "state": "01_idle",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/02_happy.png",
+        "state": "02_happy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/03_laugh.png",
+        "state": "03_laugh",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/04_sad.png",
+        "state": "04_sad",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/05_crying.png",
+        "state": "05_crying",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/06_angry.png",
+        "state": "06_angry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/07_surprised.png",
+        "state": "07_surprised",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/08_sleepy.png",
+        "state": "08_sleepy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/09_sleeping.png",
+        "state": "09_sleeping",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/10_hungry.png",
+        "state": "10_hungry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/11_eating.png",
+        "state": "11_eating",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/12_sick.png",
+        "state": "12_sick",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/13_walk.png",
+        "state": "13_walk",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/14_victory.png",
+        "state": "14_victory",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_1/15_bath.png",
+        "state": "15_bath",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "evolved_stage_2": [
+      {
+        "file": "evolved_stage_2/01_idle.png",
+        "state": "01_idle",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/02_happy.png",
+        "state": "02_happy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/03_laugh.png",
+        "state": "03_laugh",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/04_sad.png",
+        "state": "04_sad",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/05_crying.png",
+        "state": "05_crying",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/06_angry.png",
+        "state": "06_angry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/07_surprised.png",
+        "state": "07_surprised",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/08_sleepy.png",
+        "state": "08_sleepy",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/09_sleeping.png",
+        "state": "09_sleeping",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/10_hungry.png",
+        "state": "10_hungry",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/11_eating.png",
+        "state": "11_eating",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/12_sick.png",
+        "state": "12_sick",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/13_walk.png",
+        "state": "13_walk",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/14_victory.png",
+        "state": "14_victory",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "evolved_stage_2/15_bath.png",
+        "state": "15_bath",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "special": [
+      {
+        "file": "special/01_big_neck_scared.png",
+        "state": "big_neck_scared",
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ]
+  }
+}

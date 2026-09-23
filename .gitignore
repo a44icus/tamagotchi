@@ -1,0 +1,6 @@
+# Ancien kit de sprites v1 (non utilisé — le jeu utilise le kit v2)
+sprites/ET_kawaii_tamagotchi_kit/
+# Dossiers outils / déploiement
+.claude/
+.vercel/
+node_modules/

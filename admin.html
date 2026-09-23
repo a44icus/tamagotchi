@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tamagotchi — Espace admin</title>
+<style>
+  :root { --ink:#33294a; --muted:#8a7fb0; --line:#e7ddf6; --btn:#8a6cff; --ok:#28b487; --danger:#e5484d; --card:#fff; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,sans-serif; color:var(--ink); background:linear-gradient(180deg,#f6f1ff,#eaf2ff); padding:0 0 60px; }
+  header { position:sticky; top:0; z-index:10; background:rgba(255,255,255,.86); backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:10px; padding:12px 18px; flex-wrap:wrap; }
+  header h1 { font-size:18px; margin-right:auto; }
+  header h1 small { color:var(--muted); font-weight:600; font-size:12px; }
+  .btn { border:none; cursor:pointer; border-radius:10px; padding:9px 16px; font-weight:700; font-size:13px; color:#fff; background:var(--btn); }
+  .btn.ghost { background:#efe9ff; color:var(--btn); }
+  .btn.ok { background:var(--ok); } .btn.danger { background:var(--danger); }
+  .btn:active { transform:translateY(1px); }
+  main { max-width:920px; margin:0 auto; padding:18px; display:flex; flex-direction:column; gap:18px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px 18px; box-shadow:0 6px 20px rgba(120,90,200,.06); }
+  section > h2 { font-size:15px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  section > h2 .tag { font-size:11px; color:var(--muted); font-weight:600; }
+  .row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:6px 0; }
+  label.field { display:flex; flex-direction:column; gap:3px; font-size:11px; font-weight:700; color:var(--muted); }
+  input[type=text], input[type=number], select { border:1px solid var(--line); border-radius:9px; padding:7px 9px; font-size:13px; font-family:inherit; color:var(--ink); background:#fff; }
+  input[type=number] { width:88px; }
+  input[type=text] { min-width:120px; }
+  .grid { display:grid; gap:10px; }
+  .needs-grid { grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); }
+  .thr-grid, .sim-grid { grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); }
+  .moods-grid { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); }
+  .card { border:1px solid var(--line); border-radius:12px; padding:12px; background:#fcfbff; }
+  .spritepick { display:flex; align-items:center; gap:8px; }
+  .spritepick img { width:34px; height:34px; object-fit:contain; background:#f0ebff; border-radius:8px; padding:2px; }
+  .act-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .act-head input { font-weight:800; }
+  .fx-row { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+  .flags { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; font-size:12px; }
+  .flags label { display:flex; align-items:center; gap:5px; font-weight:600; color:var(--ink); }
+  details.stage { border:1px solid var(--line); border-radius:12px; padding:8px 12px; background:#fcfbff; }
+  details.stage summary { cursor:pointer; font-weight:800; font-size:14px; display:flex; align-items:center; gap:10px; }
+  details.stage summary .mini { display:flex; gap:8px; align-items:center; margin-left:auto; font-weight:600; font-size:12px; color:var(--muted); }
+  .sprite-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-top:12px; }
+  .sprite-grid .cell { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .sprite-grid .cell .st { width:70px; font-weight:700; color:var(--muted); }
+  .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 18px; border-radius:10px; font-weight:700; font-size:13px; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
+  .hint { font-size:12px; color:var(--muted); line-height:1.5; }
+  .addbtn { border:1px dashed var(--btn); background:#f6f2ff; color:var(--btn); border-radius:10px; padding:8px 14px; font-weight:700; cursor:pointer; font-size:13px; }
+  .del { border:none; background:#ffe9ea; color:var(--danger); border-radius:8px; padding:5px 10px; font-weight:700; cursor:pointer; font-size:12px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>🎛️ Espace admin <small>· Mon Tamagotchi</small></h1>
+    <button class="btn ok" id="saveBtn">💾 Enregistrer</button>
+    <button class="btn ghost" id="exportBtn">⬇️ Exporter</button>
+    <button class="btn ghost" id="importBtn">⬆️ Importer</button>
+    <input type="file" id="importFile" accept="application/json" hidden />
+    <button class="btn danger" id="resetBtn">↺ Défauts</button>
+    <a class="btn ghost" href="index.html" target="_blank" rel="noopener">▶ Ouvrir le jeu</a>
+  </header>
+
+  <main>
+    <p class="hint" style="margin:-4px 2px 0">
+      Configure ici <b>tout</b> le jeu : besoins, seuils d'humeur, sprites par stade, actions &amp; durées, évolution, simulation.
+      Clique <b>Enregistrer</b> pour appliquer. Si le jeu est ouvert dans un autre onglet (même serveur), il se met à jour en direct.
+    </p>
+
+    <section>
+      <h2>🍗 Besoins <span class="tag">jauges, déclin et valeurs de départ</span></h2>
+      <div class="grid needs-grid" id="needsGrid"></div>
+    </section>
+
+    <section>
+      <h2>🎚️ Seuils d'humeur <span class="tag">en dessous / au-dessus de ces valeurs, l'humeur change</span></h2>
+      <div class="grid thr-grid" id="thrGrid"></div>
+    </section>
+
+    <section>
+      <h2>😀 Humeurs → état affiché <span class="tag">quel « état logique » chaque humeur utilise</span></h2>
+      <div class="grid moods-grid" id="moodsGrid"></div>
+    </section>
+
+    <section>
+      <h2>⚡ Actions &amp; timing <span class="tag">durée, effets, cooldown, animation, particules</span></h2>
+      <div id="actionsWrap" class="grid" style="gap:12px"></div>
+      <button class="addbtn" id="addAction" style="margin-top:12px">＋ Ajouter une action</button>
+    </section>
+
+    <section>
+      <h2>🥚 Stades d'évolution <span class="tag">âge d'apparition, taille, et sprite de chaque état</span></h2>
+      <div id="stagesWrap" style="display:flex; flex-direction:column; gap:10px"></div>
+      <p class="hint" style="margin-top:8px">Le cycle de marche (« walk ») s'édite via Exporter/Importer JSON pour le bébé (6 images).</p>
+    </section>
+
+    <section>
+      <h2>⚙️ Simulation <span class="tag">rythme du jeu</span></h2>
+      <div class="grid sim-grid" id="simGrid"></div>
+    </section>
+
+    <section>
+      <h2>🌗 Chambre — cycle jour/nuit <span class="tag">calé sur l'horloge réelle du joueur</span></h2>
+      <div class="grid sim-grid" id="roomGrid"></div>
+      <p class="hint" style="margin-top:8px">Les 4 fonds (matin, midi, fin de journée, nuit) sont dans <code>chambre/</code>. Règle ici l'heure de bascule de chaque ambiance (0–23).</p>
+    </section>
+
+    <section>
+      <h2>📍 Positions des sprites <span class="tag">place un état (ex. dormir) à un endroit précis de la chambre</span></h2>
+      <div class="row" style="align-items:flex-start; gap:18px; flex-wrap:wrap">
+        <div>
+          <canvas id="posCanvas" width="440" height="248" style="border-radius:12px; border:1px solid var(--line); cursor:crosshair; max-width:100%"></canvas>
+          <p class="hint" style="margin-top:6px">Choisis un état, puis <b>clique dans la chambre</b> pour y placer le sprite. Le perso s'y rendra dans le jeu quand il sera dans cet état.</p>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; min-width:200px">
+          <label class="field">État à positionner<select id="posState"></select></label>
+          <label class="field">Fond d'aperçu<select id="posBg"><option value="day">Journée</option><option value="night">Nuit</option><option value="morning">Matin</option><option value="evening">Soir</option></select></label>
+          <button class="del" id="posRemove" style="align-self:flex-start">Retirer cette position</button>
+          <div id="posList" class="hint"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="tama-config.js"></script>
+<script src="tama-cloud.js"></script>
+<script>
+"use strict";
+let cfg = TAMA.clone(TAMA.DEFAULTS);   // remplacé par la config cloud au chargement
+const KIT = () => cfg.kitBase;
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 1600); }
+
+// --- sélecteur de sprite avec aperçu ---
+function spritePicker(options, value, onChange) {
+  const wrap = el("div", "spritepick");
+  const img = el("img"); const sel = el("select");
+  options.forEach(([path, lbl]) => { const o = el("option"); o.value = path; o.textContent = lbl; sel.appendChild(o); });
+  sel.value = value != null ? value : options[0][0];
+  const refresh = () => { img.src = sel.value ? KIT() + sel.value : ""; img.style.visibility = sel.value ? "visible" : "hidden"; };
+  sel.addEventListener("change", () => { onChange(sel.value); refresh(); });
+  refresh(); wrap.append(img, sel); return wrap;
+}
+function stateSelect(value, onChange) {
+  const sel = el("select");
+  TAMA.STATE_KEYS.forEach(([k, lbl]) => { const o = el("option"); o.value = k; o.textContent = lbl + " (" + k + ")"; sel.appendChild(o); });
+  sel.value = value; sel.addEventListener("change", () => onChange(sel.value)); return sel;
+}
+function num(value, onChange, step, w) {
+  const i = el("input"); i.type = "number"; i.value = value; if (step) i.step = step; if (w) i.style.width = w + "px";
+  i.addEventListener("input", () => onChange(i.value === "" ? 0 : parseFloat(i.value))); return i;
+}
+function text(value, onChange) { const i = el("input"); i.type = "text"; i.value = value; i.addEventListener("input", () => onChange(i.value)); return i; }
+function fieldWrap(labelTxt, control) { const l = el("label", "field", labelTxt + "<br>"); l.appendChild(control); return l; }
+
+// ============ BESOINS ============
+function renderNeeds() {
+  const g = $("needsGrid"); g.innerHTML = "";
+  cfg.needs.forEach((n) => {
+    const c = el("div", "card");
+    const head = el("div", "row");
+    head.append(fieldWrap("Libellé", text(n.label, v => n.label = v)));
+    c.appendChild(head);
+    const r2 = el("div", "row");
+    r2.append(fieldWrap("Déclin /min", num(n.decayPerMin, v => n.decayPerMin = v, "0.5")));
+    r2.append(fieldWrap("Départ", num(n.start, v => n.start = v)));
+    c.appendChild(r2);
+    const r3 = el("div", "row");
+    r3.append(fieldWrap("Icône", spritePicker(TAMA.ICONS, n.icon, v => n.icon = v)));
+    c.appendChild(r3);
+    const title = el("div", null, `<b>${n.label}</b> <span class="hint">(${n.key})</span>`);
+    c.insertBefore(title, c.firstChild);
+    g.appendChild(c);
+  });
+}
+
+// ============ SEUILS ============
+const THR_LABELS = { hungerLow: "Faim basse <", funLow: "Bonheur bas <", healthLow: "Santé basse <", energyLow: "Énergie basse <", happyFun: "Content si bonheur >", happyHunger: "Content si faim >" };
+function renderThresholds() {
+  const g = $("thrGrid"); g.innerHTML = "";
+  Object.keys(cfg.thresholds).forEach(k => g.append(fieldWrap(THR_LABELS[k] || k, num(cfg.thresholds[k], v => cfg.thresholds[k] = v))));
+}
+
+// ============ HUMEURS ============
+const MOOD_LABELS = { sleeping: "😴 Endormi", sick: "🤒 Malade", hungry: "🍗 Affamé", crying: "😭 Détresse (santé)", sad: "😢 Triste", exhausted: "🥵 Épuisé", happy: "😄 Content", idle: "🙂 Neutre" };
+function renderMoods() {
+  const g = $("moodsGrid"); g.innerHTML = "";
+  Object.keys(cfg.moods).forEach(m => { const c = el("div", "card"); c.append(fieldWrap(MOOD_LABELS[m] || m, stateSelect(cfg.moods[m], v => cfg.moods[m] = v))); g.appendChild(c); });
+}
+
+// ============ ACTIONS ============
+const FLAG_LABELS = { toggleSleep: "Bascule sommeil", fillHygiene: "Propreté 100%", clearPoops: "Nettoie crottes", curesSick: "Soigne maladie", onlyWhenSick: "Seulement si malade" };
+function renderActions() {
+  const w = $("actionsWrap"); w.innerHTML = "";
+  cfg.actions.forEach((a, idx) => {
+    if (!a.effects) a.effects = {}; if (!a.require) a.require = {}; if (!a.flags) a.flags = {};
+    const c = el("div", "card");
+    const head = el("div", "act-head");
+    head.appendChild(text(a.label, v => a.label = v));
+    const del = el("button", "del", "Supprimer"); del.onclick = () => { cfg.actions.splice(idx, 1); renderActions(); };
+    head.appendChild(del); c.appendChild(head);
+
+    const r1 = el("div", "fx-row");
+    r1.append(fieldWrap("Icône bouton", spritePicker(TAMA.ICONS, a.icon, v => a.icon = v)));
+    r1.append(fieldWrap("Animation (état)", stateSelect(a.pose, v => a.pose = v)));
+    r1.append(fieldWrap("Durée (ms)", num(a.duration, v => a.duration = v, "100")));
+    r1.append(fieldWrap("Cooldown (ms)", num(a.cooldown, v => a.cooldown = v, "100")));
+    c.appendChild(r1);
+
+    const r2 = el("div", "fx-row");
+    r2.append(fieldWrap("Effet (particules)", spritePicker(TAMA.FX_OPTIONS, a.fx || "", v => a.fx = v)));
+    r2.append(fieldWrap("Nb particules", num(a.fxCount || 0, v => a.fxCount = v)));
+    r2.append(fieldWrap("Énergie min requise", num(a.require.energy || 0, v => { if (v > 0) a.require.energy = v; else delete a.require.energy; })));
+    c.appendChild(r2);
+
+    const eff = el("div", "fx-row"); eff.appendChild(el("div", "hint", "Effets sur les besoins&nbsp;:"));
+    cfg.needs.forEach(n => eff.append(fieldWrap(n.label, num(a.effects[n.key] || 0, v => { if (v) a.effects[n.key] = v; else delete a.effects[n.key]; }))));
+    c.appendChild(eff);
+
+    const fl = el("div", "flags");
+    Object.keys(FLAG_LABELS).forEach(f => {
+      const lab = el("label"); const cb = el("input"); cb.type = "checkbox"; cb.checked = !!a.flags[f];
+      cb.addEventListener("change", () => { if (cb.checked) a.flags[f] = true; else delete a.flags[f]; });
+      lab.append(cb, document.createTextNode(FLAG_LABELS[f])); fl.appendChild(lab);
+    });
+    c.appendChild(fl);
+    w.appendChild(c);
+  });
+}
+
+// ============ STADES ============
+function renderStages() {
+  const w = $("stagesWrap"); w.innerHTML = "";
+  cfg.stages.forEach((st) => {
+    const d = el("details", "stage");
+    const sum = el("summary");
+    const preview = st.sprites && st.sprites.idle ? `<img src="${KIT() + st.sprites.idle}" style="width:26px;height:26px;object-fit:contain;vertical-align:middle;border-radius:6px;background:#f0ebff">` : "🥚";
+    sum.innerHTML = `${preview} <span>${st.label}</span> <span class="mini">clé: ${st.key}</span>`;
+    d.appendChild(sum);
+
+    const r = el("div", "row"); r.style.marginTop = "10px";
+    r.append(fieldWrap("Libellé", text(st.label, v => { st.label = v; })));
+    r.append(fieldWrap("Apparaît à (min)", num(st.fromMin, v => st.fromMin = v, "0.5")));
+    r.append(fieldWrap("Taille (0-1 de l'écran)", num(st.scale, v => st.scale = v, "0.02")));
+    if (st.key !== "egg") r.append(fieldWrap("Soin requis (0-1)", num(st.requireCare || 0, v => { if (v > 0) st.requireCare = v; else delete st.requireCare; }, "0.05")));
+    d.appendChild(r);
+
+    if (st.key !== "egg" && TAMA.STAGE_FILES[st.key]) {
+      const grid = el("div", "sprite-grid");
+      const files = TAMA.STAGE_FILES[st.key];
+      TAMA.STATE_KEYS.forEach(([k, lbl]) => {
+        if (k === "walk") return;                    // cycle géré via JSON
+        if (st.sprites[k] === undefined) return;     // état non défini pour ce stade
+        const cell = el("div", "cell");
+        cell.appendChild(el("span", "st", lbl));
+        cell.appendChild(spritePicker(files, st.sprites[k], v => st.sprites[k] = v));
+        grid.appendChild(cell);
+      });
+      d.appendChild(grid);
+    } else if (st.key === "egg") {
+      d.appendChild(el("p", "hint", "L'œuf utilise la planche egg/eggs.png (expressions + séquence d'éclosion). Règle ici l'âge d'éclosion (via « Bébé ») et la taille ; le mapping des frames s'édite via Export/Import JSON."));
+    }
+    w.appendChild(d);
+  });
+}
+
+// ============ SIMULATION ============
+const SIM_LABELS = { poopEveryMin: "Crotte toutes les (min)", sleepEnergyPerMin: "Énergie récup./min (sommeil)", offlineCapMin: "Plafond hors-ligne (min)" };
+function renderSim() {
+  const g = $("simGrid"); g.innerHTML = "";
+  Object.keys(cfg.sim).forEach(k => g.append(fieldWrap(SIM_LABELS[k] || k, num(cfg.sim[k], v => cfg.sim[k] = v, "0.1"))));
+}
+
+const ROOM_LABELS = { morning: "🌅 Matin dès (h)", day: "☀️ Journée dès (h)", evening: "🌇 Fin de journée dès (h)", night: "🌙 Nuit dès (h)" };
+function renderRoom() {
+  const g = $("roomGrid"); g.innerHTML = "";
+  if (!cfg.room || !cfg.room.hours) return;
+  Object.keys(cfg.room.hours).forEach(k => g.append(fieldWrap(ROOM_LABELS[k] || k, num(cfg.room.hours[k], v => cfg.room.hours[k] = v))));
+}
+// ============ POSITIONS DES SPRITES (éditeur visuel) ============
+const posCanvas = $("posCanvas"), pctx = posCanvas.getContext("2d");
+const posImgs = {};
+function posBgFile() { const k = $("posBg").value; return cfg.room ? cfg.room[k] : null; }
+function loadPosBg() {
+  const f = posBgFile(); if (!f) return null;
+  if (posImgs[f]) return posImgs[f];
+  const im = new Image(); im.onload = drawPosCanvas; im.src = cfg.kitBase + f; posImgs[f] = im; return im;
+}
+function drawPosCanvas() {
+  const W = posCanvas.width, H = posCanvas.height;
+  pctx.clearRect(0, 0, W, H);
+  const img = loadPosBg();
+  if (img && img.complete && img.naturalWidth) {
+    const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight), dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+    pctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  } else { pctx.fillStyle = "#dfe7ff"; pctx.fillRect(0, 0, W, H); }
+  const sel = $("posState").value;
+  for (const k in (cfg.positions || {})) {
+    const p = cfg.positions[k], x = p.x * W, y = p.y * H, active = k === sel;
+    pctx.fillStyle = active ? "#8a6cff" : "rgba(255,255,255,.9)"; pctx.strokeStyle = active ? "#fff" : "#8a6cff"; pctx.lineWidth = 2;
+    pctx.beginPath(); pctx.arc(x, y, active ? 8 : 6, 0, 7); pctx.fill(); pctx.stroke();
+    pctx.fillStyle = "#33294a"; pctx.font = "bold 11px sans-serif"; pctx.fillText(k, x + 10, y + 4);
+  }
+}
+posCanvas.addEventListener("click", (e) => {
+  const r = posCanvas.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height, k = $("posState").value;
+  if (!cfg.positions) cfg.positions = {};
+  cfg.positions[k] = { x: +x.toFixed(3), y: +y.toFixed(3) };
+  drawPosCanvas(); renderPosList();
+});
+function renderPosList() {
+  const set = Object.keys(cfg.positions || {});
+  $("posList").innerHTML = set.length ? ("<b>Définies :</b> " + set.join(", ")) : "Aucune position (le perso se balade librement).";
+}
+function renderPositions() {
+  const sel = $("posState"); sel.innerHTML = "";
+  TAMA.STATE_KEYS.forEach(([k, lbl]) => { const o = document.createElement("option"); o.value = k; o.textContent = lbl + " (" + k + ")"; sel.appendChild(o); });
+  sel.value = "sleeping";
+  sel.onchange = drawPosCanvas; $("posBg").onchange = drawPosCanvas;
+  $("posRemove").onclick = () => { if (cfg.positions) delete cfg.positions[$("posState").value]; drawPosCanvas(); renderPosList(); };
+  renderPosList(); drawPosCanvas();
+}
+
+function renderAll() { renderNeeds(); renderThresholds(); renderMoods(); renderActions(); renderStages(); renderSim(); renderRoom(); renderPositions(); }
+(async () => { try { cfg = await CLOUD.loadConfig(); } catch {} renderAll(); })();
+
+// ============ Barre d'outils ============
+$("saveBtn").onclick = async () => {
+  const pw = prompt("Mot de passe admin pour enregistrer la config (partagée par tous les joueurs) :");
+  if (!pw) return;
+  $("saveBtn").disabled = true;
+  try { await CLOUD.saveConfig(pw, cfg); toast("💾 Enregistré dans le cloud — tous les joueurs auront ces réglages"); }
+  catch (e) { toast("❌ " + (e.message || e)); }
+  $("saveBtn").disabled = false;
+};
+$("resetBtn").onclick = () => {
+  if (!confirm("Rétablir la configuration par défaut dans l'éditeur ? (non enregistré tant que tu ne cliques pas Enregistrer)")) return;
+  cfg = TAMA.clone(TAMA.DEFAULTS); renderAll(); toast("↺ Défauts chargés — clique Enregistrer pour appliquer");
+};
+$("exportBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: "application/json" });
+  const a = el("a"); a.href = URL.createObjectURL(blob); a.download = "tamagotchi-config.json"; a.click(); URL.revokeObjectURL(a.href);
+  toast("⬇️ Config exportée");
+};
+$("importBtn").onclick = () => $("importFile").click();
+$("importFile").addEventListener("change", (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { try { const j = JSON.parse(rd.result); cfg = TAMA.clone(TAMA.DEFAULTS); Object.assign(cfg, j); renderAll(); toast("⬆️ Importé — pense à Enregistrer"); } catch { toast("❌ JSON invalide"); } };
+  rd.readAsText(f); e.target.value = "";
+});
+</script>
+</body>
+</html>
