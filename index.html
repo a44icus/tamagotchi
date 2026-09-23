@@ -34,6 +34,11 @@
   .hbtn:hover { opacity:1; transform:scale(1.15); }
   .hbtn.off { opacity:.3; }
   .coins { font-size:12px; font-weight:800; color:#b8860b; background:#fff6d6; border:1px solid #f0dc9a; border-radius:999px; padding:2px 8px; white-space:nowrap; }
+  .tabs { display:flex; gap:8px; margin-bottom:4px; flex-wrap:wrap; justify-content:center; }
+  .tab { border:1px solid #e0d4f7; background:#fff; color:#8a6cff; font-weight:700; font-size:12px; padding:6px 12px; border-radius:999px; cursor:pointer; }
+  .tab.on { background:#8a6cff; color:#fff; border-color:#8a6cff; }
+  .rowitem.clickable { cursor:pointer; transition:.12s; } .rowitem.clickable:hover { background:#faf6ff; }
+  #ppStats .rowitem { justify-content:space-between; } #ppStats .k { color:#9a8fc0; font-weight:700; font-size:12px; } #ppStats .v { font-weight:800; font-size:13px; }
   #backList .grow { font-weight:800; }
   #miniGame { padding:0; overflow:hidden; background:#dff1ff; }
   #mgCanvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block; }
@@ -246,8 +251,20 @@
     <div class="overlay" id="lbModal">
       <button class="closeX" data-close="lbModal">✕</button>
       <h1>🏆 Classement</h1>
-      <p style="margin-top:-6px">Les Tamagotchis vivants les plus âgés.</p>
+      <div class="tabs" id="lbTabs">
+        <button class="tab on" data-cat="age">⏳ Les plus âgés</button>
+        <button class="tab" data-cat="care">💜 Les mieux soignés</button>
+      </div>
       <div class="list" id="lbList"></div>
+    </div>
+
+    <!-- Profil d'un Tamagotchi (public) -->
+    <div class="overlay" id="petProfile">
+      <button class="closeX" data-close="petProfile">✕</button>
+      <div id="ppEmoji" style="font-size:52px">🐾</div>
+      <h1 id="ppName">—</h1>
+      <p id="ppOwner" style="margin-top:-8px">par —</p>
+      <div class="list" id="ppStats"></div>
     </div>
   </div>
 
@@ -322,7 +339,12 @@ function save() {
 function load() { try { const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch { return null; } }
 function petSummary() {
   const st = currentStage();
-  return { stage: st.key, stageLabel: st.label, ageText: fmtAge(ageMin()), care: +careQuality().toFixed(2), dead: !!pet.dead };
+  const acc = pet.equipped ? (SHOP.find(s => s.id === pet.equipped) || {}) : null;
+  return {
+    stage: st.key, stageLabel: st.label, ageText: fmtAge(ageMin()), care: +careQuality().toFixed(2), dead: !!pet.dead,
+    coins: pet.coins || 0, accessory: acc ? acc.emoji : "",
+    decor: SHOP.filter(s => s.type === "room" && pet.inventory && pet.inventory[s.id]).map(s => s.emoji).join(""),
+  };
 }
 async function cloudFlush() {
   if (MODE === "cloud" && activePetId && cloudDirty && pet) {
@@ -1169,18 +1191,39 @@ async function openPets() {
 }
 $$("btnNewPet").onclick = () => { hideOv("petsModal"); pet = newPet("Piou"); activePetId = null; openBirth(); updateUI(); };
 
-async function openLeaderboard() {
-  const list = $$("lbList"); list.innerHTML = "Chargement…"; showOv("lbModal");
+let lbCat = "age";
+async function openLeaderboard() { showOv("lbModal"); await loadLeaderboard(); }
+async function loadLeaderboard() {
+  const list = $$("lbList"); list.innerHTML = "Chargement…";
+  document.querySelectorAll("#lbTabs .tab").forEach(t => t.classList.toggle("on", t.dataset.cat === lbCat));
   let rows = [];
-  try { rows = await CLOUD.leaderboard(); } catch { list.innerHTML = "Erreur."; return; }
+  try { rows = await CLOUD.leaderboardCat(lbCat); } catch { list.innerHTML = "Erreur."; return; }
   list.innerHTML = "";
   if (!rows.length) { list.innerHTML = "<p class='muted' style='color:#9a8fc0'>Personne encore. Sois le premier !</p>"; return; }
   rows.forEach((r, i) => {
     const s = r.summary || {};
-    const row = document.createElement("div"); row.className = "rowitem";
-    row.innerHTML = `<div class="rank">${i + 1}</div><div class="grow">${r.pet_name} <span class="muted">par ${r.username}</span><div class="muted">${s.stageLabel || ""} ${s.ageText ? "· " + s.ageText : "· " + r.score + " min"}</div></div>`;
+    const extra = lbCat === "care" ? ("💜 " + Math.round((s.care || 0) * 100) + "%") : (s.ageText || (r.score + " min"));
+    const row = document.createElement("div"); row.className = "rowitem clickable";
+    row.innerHTML = `<div class="rank">${i + 1}</div><div class="grow">${s.accessory || ""}${r.pet_name} <span class="muted">par ${r.username}</span><div class="muted">${s.stageLabel || ""} · ${extra}</div></div>`;
+    row.onclick = () => showPetProfile(r);
     list.appendChild(row);
   });
+}
+document.querySelectorAll("#lbTabs .tab").forEach(t => t.onclick = () => { lbCat = t.dataset.cat; loadLeaderboard(); });
+function showPetProfile(r) {
+  const s = r.summary || {};
+  $$("ppEmoji").textContent = s.accessory || "🐾";
+  $$("ppName").textContent = r.pet_name;
+  $$("ppOwner").textContent = "par " + r.username;
+  const rows = [
+    ["Stade", s.stageLabel || "—"],
+    ["Âge", s.ageText || (r.score + " min")],
+    ["Qualité de soin", Math.round((s.care || 0) * 100) + " %"],
+    ["Pièces", "🪙 " + (s.coins || 0)],
+    ["Déco", s.decor || "—"],
+  ];
+  $$("ppStats").innerHTML = rows.map(([k, v]) => `<div class="rowitem"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  showOv("petProfile");
 }
 
 // ---------- Démarrage ----------

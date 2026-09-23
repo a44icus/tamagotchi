@@ -79,6 +79,7 @@
 
     // ---- Classement ----
     async leaderboard() { const { data, error } = await sb.rpc("get_leaderboard"); if (error) throw error; return data || []; },
+    async leaderboardCat(cat) { const { data, error } = await sb.rpc("get_leaderboard_cat", { cat: cat || "age" }); if (error) throw error; return data || []; },
   };
 
   window.CLOUD = CLOUD;
