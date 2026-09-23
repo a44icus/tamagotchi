@@ -357,6 +357,8 @@ function resize() {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 window.addEventListener("resize", resize);
+// resynchronise le canvas dès que sa taille d'affichage change (mobile, rotation, barre d'adresse…)
+if (window.ResizeObserver) { try { new ResizeObserver(() => resize()).observe(cv); } catch {} }
 const creature = { x: 0.5, tx: 0.5, dir: 1 };
 
 function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
@@ -657,6 +659,9 @@ function floatMsg(txt) { const f = $("float"); f.textContent = txt; f.style.opac
 let last = performance.now();
 function frame(now) {
   const dt = Math.min(now - last, 100); last = now;
+  // garde toujours la résolution du canvas alignée sur sa taille d'affichage (anti-déformation)
+  const rw = cv.clientWidth, rh = cv.clientHeight;
+  if (rw && rh && (Math.abs(rw - W) > 0.5 || Math.abs(rh - H) > 0.5)) resize();
   if (pet) {
     wander(dt);
     if (Math.abs(creature.tx - creature.x) > 0.02 && !pet.asleep && !busy() && !posingNow()) anim.walkT += dt * 0.012;
