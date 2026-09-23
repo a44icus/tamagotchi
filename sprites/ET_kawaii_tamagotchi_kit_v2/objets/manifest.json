@@ -1,0 +1,42 @@
+{
+  "theme": "Accessoires spatiaux kawaii",
+  "format": "PNG transparent",
+  "files": [
+    {
+      "name": "chapeau.png",
+      "source": "/mnt/data/chapeau_de_sorcier_cosmique_en_peluche.png"
+    },
+    {
+      "name": "noeud.png",
+      "source": "/mnt/data/nœud_spatial_rouge_pastel_en_peluche.png"
+    },
+    {
+      "name": "lunettes.png",
+      "source": "/mnt/data/lunettes_kawaii_célestes_dorées.png"
+    },
+    {
+      "name": "couronne.png",
+      "source": "/mnt/data/couronne_céleste_dorée_scintillante.png"
+    },
+    {
+      "name": "etoiles.png",
+      "source": "/mnt/data/trio_d_étoiles_kawaii_dorées_scintillantes.png"
+    },
+    {
+      "name": "ballons.png",
+      "source": "/mnt/data/bouquet_de_ballons_galactiques_magiques.png"
+    },
+    {
+      "name": "guirlande.png",
+      "source": "/mnt/data/guirlande_spatiale_kawaii_lumineuse.png"
+    },
+    {
+      "name": "plante.png",
+      "source": "/mnt/data/plante_spatiale_dans_un_pot_étoilé.png"
+    },
+    {
+      "name": "gateau.png",
+      "source": "/mnt/data/gâteau_d_anniversaire_cosmique_kawaii.png"
+    }
+  ]
+}

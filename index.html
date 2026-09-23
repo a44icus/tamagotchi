@@ -367,8 +367,9 @@ function petSummary() {
   const acc = pet.equipped ? (SHOP.find(s => s.id === pet.equipped) || {}) : null;
   return {
     stage: st.key, stageLabel: st.label, ageText: fmtAge(ageMin()), care: +careQuality().toFixed(2), dead: !!pet.dead,
-    coins: pet.coins || 0, accessory: acc ? acc.emoji : "",
+    coins: pet.coins || 0, accessory: acc ? acc.emoji : "", accId: pet.equipped || "",
     decor: SHOP.filter(s => s.type === "room" && pet.inventory && pet.inventory[s.id]).map(s => s.emoji).join(""),
+    decorIds: SHOP.filter(s => s.type === "room" && pet.inventory && pet.inventory[s.id]).map(s => s.id),
   };
 }
 async function cloudFlush() {
@@ -531,17 +532,19 @@ function drawRoom() {
   if (pet.asleep) { ctx.fillStyle = "rgba(18,18,55,.42)"; ctx.fillRect(0, 0, W, H); }  // "lumière éteinte"
 }
 // ---- Boutique : catalogue, déco de chambre, accessoire porté ----
+// sprites PNG dans objets/ ; ay = position verticale (fraction de la taille du pet), ah = hauteur cible
 const SHOP = [
-  { id: "hat",      label: "Chapeau",   emoji: "🎩", price: 15, type: "wear" },
-  { id: "bow",      label: "Nœud",      emoji: "🎀", price: 10, type: "wear" },
-  { id: "glasses",  label: "Lunettes",  emoji: "🕶️", price: 20, type: "wear" },
-  { id: "crown",    label: "Couronne",  emoji: "👑", price: 45, type: "wear" },
-  { id: "stars",    label: "Étoiles",   emoji: "⭐", price: 8,  type: "room", x: 0.5,  y: 0.14 },
-  { id: "balloons", label: "Ballons",   emoji: "🎈", price: 12, type: "room", x: 0.15, y: 0.28 },
-  { id: "garland",  label: "Guirlande", emoji: "🎉", price: 18, type: "room", x: 0.85, y: 0.2 },
-  { id: "plant",    label: "Plante",    emoji: "🪴", price: 14, type: "room", x: 0.9,  y: 0.72 },
-  { id: "cake",     label: "Gâteau",    emoji: "🎂", price: 25, type: "room", x: 0.12, y: 0.74 },
+  { id: "hat",      label: "Chapeau",   emoji: "🎩", price: 15, type: "wear", sprite: "objets/chapeau.png",   ay: 0.92, ah: 0.55 },
+  { id: "bow",      label: "Nœud",      emoji: "🎀", price: 10, type: "wear", sprite: "objets/noeud.png",     ay: 0.86, ah: 0.36 },
+  { id: "glasses",  label: "Lunettes",  emoji: "🕶️", price: 20, type: "wear", sprite: "objets/lunettes.png",  ay: 0.64, ah: 0.30 },
+  { id: "crown",    label: "Couronne",  emoji: "👑", price: 45, type: "wear", sprite: "objets/couronne.png",  ay: 0.92, ah: 0.46 },
+  { id: "stars",    label: "Étoiles",   emoji: "⭐", price: 8,  type: "room", sprite: "objets/etoiles.png",   x: 0.5,  y: 0.15, ah: 0.16 },
+  { id: "balloons", label: "Ballons",   emoji: "🎈", price: 12, type: "room", sprite: "objets/ballons.png",   x: 0.14, y: 0.32, ah: 0.36 },
+  { id: "garland",  label: "Guirlande", emoji: "🎉", price: 18, type: "room", sprite: "objets/guirlande.png", x: 0.82, y: 0.18, ah: 0.20 },
+  { id: "plant",    label: "Plante",    emoji: "🪴", price: 14, type: "room", sprite: "objets/plante.png",    x: 0.9,  y: 0.68, ah: 0.28 },
+  { id: "cake",     label: "Gâteau",    emoji: "🎂", price: 25, type: "room", sprite: "objets/gateau.png",    x: 0.12, y: 0.72, ah: 0.24 },
 ];
+SHOP.forEach(it => it.sprite && loadImg(it.sprite));   // préchargement
 function emojiAt(e, x, y, px) {
   ctx.save();
   ctx.globalAlpha = 1; ctx.fillStyle = "#000";   // les emojis couleur suivent l'alpha du fillStyle : le forcer opaque
@@ -550,9 +553,33 @@ function emojiAt(e, x, y, px) {
   ctx.fillText(e, x, y);
   ctx.restore();
 }
+// boîte opaque d'un sprite (rogne le padding transparent), mise en cache sur l'image
+const _objCv = document.createElement("canvas");
+function imgBounds(img) {
+  if (img.__b) return img.__b;
+  const w = img.naturalWidth, h = img.naturalHeight;
+  _objCv.width = w; _objCv.height = h;
+  const g = _objCv.getContext("2d"); g.clearRect(0, 0, w, h); g.drawImage(img, 0, 0);
+  let data; try { data = g.getImageData(0, 0, w, h).data; } catch { return (img.__b = { sx: 0, sy: 0, sw: w, sh: h }); }
+  let x0 = w, y0 = h, x1 = 0, y1 = 0, found = false;
+  for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) {
+    if (data[(y * w + x) * 4 + 3] > 24) { found = true; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  return (img.__b = found ? { sx: x0, sy: y0, sw: Math.max(1, x1 - x0), sh: Math.max(1, y1 - y0) } : { sx: 0, sy: 0, sw: w, sh: h });
+}
+function drawObjTo(c, img, cx, cy, targetH) {
+  const b = imgBounds(img), s = targetH / b.sh, w = b.sw * s, h = targetH;
+  c.drawImage(img, b.sx, b.sy, b.sw, b.sh, cx - w / 2, cy - h / 2, w, h);
+}
+function drawObj(img, cx, cy, targetH) { drawObjTo(ctx, img, cx, cy, targetH); }
 function drawDecor() {
   if (!pet || !pet.inventory) return;
-  for (const it of SHOP) if (it.type === "room" && pet.inventory[it.id]) emojiAt(it.emoji, it.x * W + roomPanX, it.y * H, H * 0.1);
+  for (const it of SHOP) {
+    if (it.type !== "room" || !pet.inventory[it.id]) continue;
+    const cx = it.x * W + roomPanX, cy = it.y * H;
+    const img = it.sprite ? (IMG[it.sprite] || loadImg(it.sprite)) : null;
+    if (ready(img)) drawObj(img, cx, cy, H * (it.ah || 0.2)); else emojiAt(it.emoji, cx, cy, H * 0.1);
+  }
 }
 function drawAccessory(t) {
   if (!pet || pet.dead || !pet.equipped) return;
@@ -562,7 +589,9 @@ function drawAccessory(t) {
   const baseY = stage.key === "egg" ? H * 0.84 : H * floorY();
   const ch = H * (stage.scale > 1 ? stage.scale / 100 : stage.scale);
   const hop = pet.asleep || busy() ? 0 : Math.abs(Math.sin(t * 0.004)) * 7;
-  emojiAt(it.emoji, x, baseY - ch * 0.92 - hop, ch * 0.44);
+  const cy = baseY - ch * (it.ay || 0.88) - hop;
+  const img = it.sprite ? (IMG[it.sprite] || loadImg(it.sprite)) : null;
+  if (ready(img)) drawObj(img, x, cy, ch * (it.ah || 0.5)); else emojiAt(it.emoji, x, cy, ch * 0.44);
 }
 
 // ---- humeur ----
@@ -1041,7 +1070,8 @@ function renderShop() {
       btn.className = "play"; btn.textContent = "Possédé ✓"; btn.disabled = true; btn.style.opacity = ".6";
     }
     btn.onclick = () => buyItem(it);
-    row.innerHTML = '<div style="font-size:22px">' + it.emoji + '</div><div class="grow">' + it.label +
+    const thumb = it.sprite ? '<img src="' + SPRITE_BASE + it.sprite + '" style="width:36px;height:36px;object-fit:contain" alt="">' : '<div style="font-size:22px">' + it.emoji + '</div>';
+    row.innerHTML = thumb + '<div class="grow">' + it.label +
       '<div class="muted">' + (it.type === "wear" ? "Accessoire" + (equipped ? " · porté" : "") : "Déco de chambre") + '</div></div>';
     row.appendChild(btn);
     list.appendChild(row);
@@ -1346,12 +1376,27 @@ function drawVisitScene(r) {
   let sp = stg && stg.sprites && stg.sprites.idle; if (Array.isArray(sp)) sp = sp[0];
   const img = sp ? (IMG[sp] || loadImg(sp)) : null;
   x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = "#000";
+  // déco de la chambre (sprites)
+  (s.decorIds || []).forEach((id, i) => {
+    const it = SHOP.find(o => o.id === id); if (!it) return;
+    const dimg = it.sprite ? (IMG[it.sprite] || loadImg(it.sprite)) : null;
+    const cx = Wc * (it.x != null ? it.x : 0.15 + 0.18 * i), cy = Hc * (it.y != null ? it.y : 0.2);
+    if (ready(dimg)) drawObjTo(x, dimg, cx, cy, Hc * (it.ah || 0.2));
+    else { x.save(); x.fillStyle = "#000"; x.font = Math.round(Hc * 0.1) + "px serif"; x.fillText(it.emoji, cx, cy); x.restore(); }
+  });
+  // le pet
   if (img && img.complete && img.naturalWidth) {
     const scl = ch / img.naturalHeight, w = img.naturalWidth * scl;
     x.drawImage(img, Wc / 2 - w / 2, baseY - ch, w, ch);
   } else { x.font = Math.round(ch * 0.7) + "px serif"; x.fillText(s.stage === "egg" ? "🥚" : "🐾", Wc / 2, baseY - ch * 0.5); }
-  if (s.accessory) { x.save(); x.fillStyle = "#000"; x.shadowColor = "rgba(0,0,0,.4)"; x.shadowBlur = ch * 0.08; x.font = Math.round(ch * 0.4) + "px serif"; x.fillText(s.accessory, Wc / 2, baseY - ch * 0.92); x.restore(); }
-  if (s.decor) { x.save(); x.fillStyle = "#000"; x.font = Math.round(Hc * 0.1) + "px serif"; [...s.decor].forEach((e, i) => x.fillText(e, Wc * (0.12 + 0.16 * i), Hc * 0.18)); x.restore(); }
+  // accessoire porté (sprite)
+  const accIt = s.accId ? SHOP.find(o => o.id === s.accId) : null;
+  if (accIt) {
+    const aimg = accIt.sprite ? (IMG[accIt.sprite] || loadImg(accIt.sprite)) : null;
+    const acy = baseY - ch * (accIt.ay || 0.88);
+    if (ready(aimg)) drawObjTo(x, aimg, Wc / 2, acy, ch * (accIt.ah || 0.5));
+    else { x.save(); x.fillStyle = "#000"; x.font = Math.round(ch * 0.4) + "px serif"; x.fillText(accIt.emoji, Wc / 2, acy); x.restore(); }
+  } else if (s.accessory) { x.save(); x.fillStyle = "#000"; x.font = Math.round(ch * 0.4) + "px serif"; x.fillText(s.accessory, Wc / 2, baseY - ch * 0.92); x.restore(); }
 }
 
 // ---------- Démarrage ----------
