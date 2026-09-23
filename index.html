@@ -33,7 +33,7 @@
 
   .screen { position:relative; border-radius:22px; overflow:hidden;
     box-shadow: inset 0 0 0 4px #d9ccff, inset 0 0 30px rgba(120,90,200,.18); aspect-ratio:1672/941; background:#bfe0ff; }
-  canvas { display:block; width:100%; height:100%; }
+  canvas { display:block; width:100%; height:100%; touch-action:none; }
   #float { position:absolute; left:50%; top:14%; transform:translateX(-50%); font-weight:800; font-size:15px;
     color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.35); pointer-events:none; opacity:0; transition:opacity .25s, top .5s; }
 
@@ -361,6 +361,14 @@ window.addEventListener("resize", resize);
 if (window.ResizeObserver) { try { new ResizeObserver(() => resize()).observe(cv); } catch {} }
 const creature = { x: 0.5, tx: 0.5, dir: 1 };
 
+// --- glisser (doigt/souris) pour balayer la chambre latéralement ---
+let roomPanX = 0, panDrag = null;
+cv.addEventListener("pointerdown", (e) => { panDrag = { x: e.clientX, pan: roomPanX }; try { cv.setPointerCapture(e.pointerId); } catch {} });
+cv.addEventListener("pointermove", (e) => { if (panDrag) roomPanX = panDrag.pan + (e.clientX - panDrag.x); });
+const endPan = () => { panDrag = null; };
+cv.addEventListener("pointerup", endPan);
+cv.addEventListener("pointercancel", endPan);
+
 function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function cloud(x, y, s) { ctx.beginPath(); ctx.arc(x, y, s, 0, 7); ctx.arc(x + s, y + 3, s * .8, 0, 7); ctx.arc(x - s, y + 3, s * .7, 0, 7); ctx.fill(); }
 function drawPoop(x, y) {
@@ -407,7 +415,9 @@ function currentRoom() {
 function drawCover(img) {
   const iw = img.naturalWidth, ih = img.naturalHeight, scale = Math.max(W / iw, H / ih);
   const dw = iw * scale, dh = ih * scale;
-  ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  const maxPan = Math.max(0, (dw - W) / 2);
+  roomPanX = Math.max(-maxPan, Math.min(maxPan, roomPanX));   // clamp aux bords de l'image
+  ctx.drawImage(img, (W - dw) / 2 + roomPanX, (H - dh) / 2, dw, dh);
 }
 function drawRoom() {
   const bg = currentRoom(), img = bg ? IMG[bg] : null;
