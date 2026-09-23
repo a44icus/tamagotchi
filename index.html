@@ -331,6 +331,7 @@ function collectPaths() {
   if (CFG.evolveFx) s.add(CFG.evolveFx);
   if (CFG.eggSheet && CFG.eggSheet.file) s.add(CFG.eggSheet.file);
   if (CFG.room) ["morning", "day", "evening", "night"].forEach(k => CFG.room[k] && s.add(CFG.room[k]));
+  (CFG.poopSprites || []).forEach(p => s.add(p));
   return s;
 }
 function preloadAll() { collectPaths().forEach(loadImg); }
@@ -436,7 +437,7 @@ function simulate(minutes) {
       pet.poopTimer += dm;
       if (pet.poopTimer >= sim.poopEveryMin) {
         pet.poopTimer = 0;
-        if (pet.poops.length < 4) pet.poops.push({ x: 0.15 + Math.random() * 0.7 });
+        if (pet.poops.length < 4) pet.poops.push({ x: 0.15 + Math.random() * 0.7, v: Math.floor(Math.random() * ((CFG.poopSprites || []).length || 1)) });
         setS("hygiene", S("hygiene") - 8);
       }
     }
@@ -562,7 +563,12 @@ function drawRoom() {
   const bg = currentRoom(), img = bg ? IMG[bg] : null;
   if (ready(img)) drawCover(img); else drawRoomProcedural();
   drawDecor();                                                                         // déco achetée (solidaire du décor)
-  for (const p of pet.poops) drawPoop(p.x * W + roomPanX, H * (0.9 + (p.x % 0.05)));   // solidaires du décor
+  for (const p of pet.poops) {   // solidaires du décor
+    const px = p.x * W + roomPanX, py = H * (0.9 + (p.x % 0.05));
+    const sprites = CFG.poopSprites || [], path = sprites.length ? sprites[(p.v || 0) % sprites.length] : null;
+    const img = path ? (IMG[path] || loadImg(path)) : null;
+    if (ready(img)) drawObj(img, px, py - H * 0.02, H * 0.075); else drawPoop(px, py);
+  }
   if (pet.asleep) { ctx.fillStyle = "rgba(18,18,55,.42)"; ctx.fillRect(0, 0, W, H); }  // "lumière éteinte"
 }
 // ---- Boutique : catalogue, déco de chambre, accessoire porté ----

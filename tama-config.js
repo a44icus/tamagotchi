@@ -128,6 +128,8 @@
     },
     // Mini-jeu « Jouer »
     minigame: { durationSec: 18, bombRate: 0.17, funMax: 40 },
+    // Sprites de crottes (variantes tirées au hasard) ; repli sur un dessin si absent
+    poopSprites: ["crottes/crotte01.png", "crottes/crotte02.png", "crottes/crotte03.png"],
     // Aliments proposés au clic sur « Nourrir » (chaque pet a un préféré tiré à la naissance → bonus de bonheur)
     foods: [
       { id: "meal",  label: "Repas",   emoji: "🍲", hunger: 26, fun: 0 },
