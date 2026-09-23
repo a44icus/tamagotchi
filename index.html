@@ -33,6 +33,7 @@
   .hbtn { background:none; border:none; cursor:pointer; font-size:16px; line-height:1; padding:0; opacity:.6; transition:.15s; }
   .hbtn:hover { opacity:1; transform:scale(1.15); }
   .hbtn.off { opacity:.3; }
+  .coins { font-size:12px; font-weight:800; color:#b8860b; background:#fff6d6; border:1px solid #f0dc9a; border-radius:999px; padding:2px 8px; white-space:nowrap; }
   #backList .grow { font-weight:800; }
   #miniGame { padding:0; overflow:hidden; background:#dff1ff; }
   #mgCanvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block; }
@@ -134,6 +135,8 @@
       <div class="name">🐾 <span id="petName">…</span></div>
       <div class="head-right">
         <div class="stage"><span id="stageTxt">Œuf</span> · <span id="ageTxt">0 min</span></div>
+        <span class="coins" id="coinTxt" title="Tes pièces">🪙 0</span>
+        <button class="hbtn" id="shopBtn" title="Boutique">🛍️</button>
         <button class="hbtn" id="soundBtn" title="Sons">🔊</button>
         <button class="hbtn" id="notifBtn" title="Alertes de besoin">🔔</button>
         <button class="admin-link" id="accountBtn" title="Mon compte" style="background:none;border:none;cursor:pointer">👤</button>
@@ -175,6 +178,15 @@
       <p id="backSub" style="margin-top:-6px"></p>
       <div class="list" id="backList"></div>
       <button class="go" id="backOk">Prendre soin de lui</button>
+    </div>
+
+    <!-- Boutique -->
+    <div class="overlay" id="shopModal">
+      <button class="closeX" data-close="shopModal">✕</button>
+      <div style="font-size:40px">🛍️</div>
+      <h1>Boutique</h1>
+      <p style="margin-top:-6px">Solde&nbsp;: <b id="shopCoins">🪙 0</b><br>Gagne des pièces en jouant et en prenant soin de ton compagnon.</p>
+      <div class="list" id="shopList"></div>
     </div>
 
     <!-- Mini-jeu « Jouer » : attrape-gourmandises -->
@@ -278,7 +290,7 @@ function newPet(name) {
   const now = Date.now();
   const stats = {};
   CFG.needs.forEach(n => stats[n.key] = n.start);
-  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0 };
+  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null };
 }
 function migrate(p) {
   if (!p.stats) { // ancien format à plat
@@ -288,6 +300,9 @@ function migrate(p) {
   if (!p.poops) p.poops = [];
   if (typeof p.careSum !== "number") p.careSum = 0;
   if (typeof p.careTicks !== "number") p.careTicks = 0;
+  if (typeof p.coins !== "number") p.coins = 0;
+  if (!p.inventory || typeof p.inventory !== "object") p.inventory = {};
+  if (typeof p.equipped === "undefined") p.equipped = null;
   return p;
 }
 const S = (k) => pet.stats[k];
@@ -464,8 +479,43 @@ function drawCover(img) {
 function drawRoom() {
   const bg = currentRoom(), img = bg ? IMG[bg] : null;
   if (ready(img)) drawCover(img); else drawRoomProcedural();
+  drawDecor();                                                                         // déco achetée (solidaire du décor)
   for (const p of pet.poops) drawPoop(p.x * W + roomPanX, H * (0.9 + (p.x % 0.05)));   // solidaires du décor
   if (pet.asleep) { ctx.fillStyle = "rgba(18,18,55,.42)"; ctx.fillRect(0, 0, W, H); }  // "lumière éteinte"
+}
+// ---- Boutique : catalogue, déco de chambre, accessoire porté ----
+const SHOP = [
+  { id: "hat",      label: "Chapeau",   emoji: "🎩", price: 15, type: "wear" },
+  { id: "bow",      label: "Nœud",      emoji: "🎀", price: 10, type: "wear" },
+  { id: "glasses",  label: "Lunettes",  emoji: "🕶️", price: 20, type: "wear" },
+  { id: "crown",    label: "Couronne",  emoji: "👑", price: 45, type: "wear" },
+  { id: "stars",    label: "Étoiles",   emoji: "⭐", price: 8,  type: "room", x: 0.5,  y: 0.14 },
+  { id: "balloons", label: "Ballons",   emoji: "🎈", price: 12, type: "room", x: 0.15, y: 0.28 },
+  { id: "garland",  label: "Guirlande", emoji: "🎉", price: 18, type: "room", x: 0.85, y: 0.2 },
+  { id: "plant",    label: "Plante",    emoji: "🪴", price: 14, type: "room", x: 0.9,  y: 0.72 },
+  { id: "cake",     label: "Gâteau",    emoji: "🎂", price: 25, type: "room", x: 0.12, y: 0.74 },
+];
+function emojiAt(e, x, y, px) {
+  ctx.save();
+  ctx.globalAlpha = 1; ctx.fillStyle = "#000";   // les emojis couleur suivent l'alpha du fillStyle : le forcer opaque
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = Math.round(px) + "px serif";
+  ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = px * 0.18; ctx.shadowOffsetY = px * 0.05;
+  ctx.fillText(e, x, y);
+  ctx.restore();
+}
+function drawDecor() {
+  if (!pet || !pet.inventory) return;
+  for (const it of SHOP) if (it.type === "room" && pet.inventory[it.id]) emojiAt(it.emoji, it.x * W + roomPanX, it.y * H, H * 0.1);
+}
+function drawAccessory(t) {
+  if (!pet || pet.dead || !pet.equipped) return;
+  const it = SHOP.find(s => s.id === pet.equipped); if (!it) return;
+  const stage = currentStage();
+  const x = creature.x * W + roomPanX;
+  const baseY = stage.key === "egg" ? H * 0.84 : H * floorY();
+  const ch = H * (stage.scale > 1 ? stage.scale / 100 : stage.scale);
+  const hop = pet.asleep || busy() ? 0 : Math.abs(Math.sin(t * 0.004)) * 7;
+  emojiAt(it.emoji, x, baseY - ch * 0.92 - hop, ch * 0.44);
 }
 
 // ---- humeur ----
@@ -645,9 +695,10 @@ function finishAction(a) {
   if (a.flags.fillHygiene) setS("hygiene", 100);
   if (a.flags.clearPoops) pet.poops = [];
   if (a.flags.curesSick) pet.sick = false;
+  pet.coins = (pet.coins || 0) + 1;   // une pièce par soin
   burst(a.fx, a.fxCount);
   sfx({ feed: "eat", play: "play", clean: "clean", heal: "heal", cuddle: "cuddle" }[a.id] || "ok");
-  floatMsg(a.label + " ✓");
+  floatMsg(a.label + " ✓  🪙+1");
   if (a.cooldown) cooldowns[a.id] = performance.now() + a.cooldown;
   activity = null;
   updateUI(); save();
@@ -705,6 +756,7 @@ function updateUI() {
   $("petName").textContent = pet.name;
   $("stageTxt").textContent = currentStage().label;
   $("ageTxt").textContent = fmtAge(ageMin());
+  $("coinTxt").textContent = "🪙 " + (pet.coins || 0);
   CFG.needs.forEach(n => setBar(n.key, S(n.key)));
   updateButtonsState();
 }
@@ -893,9 +945,10 @@ function endMg() {
   const funGain = Math.min(48, MG.score * 3);
   for (const k in (a.effects || {})) if (k !== "fun" && a.effects[k] < 0) setS(k, S(k) + a.effects[k]);  // coût (énergie/faim)
   setS("fun", S("fun") + funGain);
+  pet.coins = (pet.coins || 0) + MG.score;   // 1 pièce par bonbon attrapé
   save(); updateUI();
   $("mgEndTitle").textContent = MG.score >= 12 ? "Incroyable ! 🌟" : MG.score >= 6 ? "Bien joué ! 🎉" : "C'était chouette 🙂";
-  $("mgEndTxt").textContent = "Score : " + MG.score + " · Bonheur +" + funGain;
+  $("mgEndTxt").textContent = "Score : " + MG.score + " · Bonheur +" + funGain + " · 🪙 +" + MG.score;
   $("mgEnd").style.display = "";
   sfx(MG.score >= 6 ? "evolve" : "play");
   try { setPose("dance", 1600); burst(a.fx, Math.min(12, 4 + MG.score)); } catch {}
@@ -903,6 +956,51 @@ function endMg() {
 $("mgStart").onclick = startMg;
 $("mgAgain").onclick = () => { hideOv("miniGame"); };
 $("mgCancel").onclick = () => { MG.on = false; cancelAnimationFrame(MG.raf); hideOv("miniGame"); };
+
+// ============================================================
+//  BOUTIQUE — achat de déco et d'accessoires
+// ============================================================
+function openShop() { if (!pet) return; renderShop(); showOv("shopModal"); }
+function buyItem(it) {
+  if (!pet) return;
+  const owned = pet.inventory && pet.inventory[it.id];
+  if (owned) {
+    if (it.type === "wear") { pet.equipped = (pet.equipped === it.id) ? null : it.id; sfx("ok"); save(); renderShop(); }
+    return;
+  }
+  if ((pet.coins || 0) < it.price) { floatMsg("Pas assez de pièces 🪙"); sfx("alert"); return; }
+  pet.coins -= it.price;
+  pet.inventory = pet.inventory || {}; pet.inventory[it.id] = true;
+  if (it.type === "wear") pet.equipped = it.id;
+  sfx("coin"); floatMsg(it.label + " acheté ! 🎉");
+  save(); updateUI(); renderShop();
+}
+function renderShop() {
+  $("shopCoins").textContent = "🪙 " + (pet.coins || 0);
+  const list = $("shopList"); list.innerHTML = "";
+  SHOP.forEach(it => {
+    const owned = !!(pet.inventory && pet.inventory[it.id]);
+    const equipped = pet.equipped === it.id;
+    const row = document.createElement("div"); row.className = "rowitem";
+    const btn = document.createElement("button");
+    if (!owned) {
+      const afford = (pet.coins || 0) >= it.price;
+      btn.className = afford ? "play" : "del";
+      btn.textContent = "🪙 " + it.price;
+    } else if (it.type === "wear") {
+      btn.className = equipped ? "del" : "play";
+      btn.textContent = equipped ? "Retirer" : "Porter";
+    } else {
+      btn.className = "play"; btn.textContent = "Possédé ✓"; btn.disabled = true; btn.style.opacity = ".6";
+    }
+    btn.onclick = () => buyItem(it);
+    row.innerHTML = '<div style="font-size:22px">' + it.emoji + '</div><div class="grow">' + it.label +
+      '<div class="muted">' + (it.type === "wear" ? "Accessoire" + (equipped ? " · porté" : "") : "Déco de chambre") + '</div></div>';
+    row.appendChild(btn);
+    list.appendChild(row);
+  });
+}
+$("shopBtn").onclick = openShop;
 
 // ============================================================
 //  BOUCLES
@@ -919,7 +1017,7 @@ function frame(now) {
     tickActivity();
   }
   ctx.clearRect(0, 0, W, H);
-  if (pet) { drawRoom(); drawCreature(now); }
+  if (pet) { drawRoom(); drawCreature(now); drawAccessory(now); }
   drawParticles(dt);
   requestAnimationFrame(frame);
 }
