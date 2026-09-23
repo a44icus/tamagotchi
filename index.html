@@ -39,6 +39,8 @@
   .tab.on { background:#8a6cff; color:#fff; border-color:#8a6cff; }
   .rowitem.clickable { cursor:pointer; transition:.12s; } .rowitem.clickable:hover { background:#faf6ff; }
   #ppStats .rowitem { justify-content:space-between; } #ppStats .k { color:#9a8fc0; font-weight:700; font-size:12px; } #ppStats .v { font-weight:800; font-size:13px; }
+  .hist-legend { display:flex; flex-wrap:wrap; gap:8px 14px; justify-content:center; font-size:12px; font-weight:700; color:#7a6ca0; }
+  .hist-legend span { display:inline-flex; align-items:center; gap:5px; } .hist-legend i { width:12px; height:4px; border-radius:2px; display:inline-block; }
   #backList .grow { font-weight:800; }
   #miniGame { padding:0; overflow:hidden; background:#dff1ff; }
   #mgCanvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; display:block; }
@@ -142,6 +144,7 @@
         <div class="stage"><span id="stageTxt">Œuf</span> · <span id="ageTxt">0 min</span></div>
         <span class="coins" id="coinTxt" title="Tes pièces">🪙 0</span>
         <button class="hbtn" id="shopBtn" title="Boutique">🛍️</button>
+        <button class="hbtn" id="histBtn" title="Historique des jauges">📈</button>
         <button class="hbtn" id="soundBtn" title="Sons">🔊</button>
         <button class="hbtn" id="notifBtn" title="Alertes de besoin">🔔</button>
         <button class="admin-link" id="accountBtn" title="Mon compte" style="background:none;border:none;cursor:pointer">👤</button>
@@ -183,6 +186,16 @@
       <p id="backSub" style="margin-top:-6px"></p>
       <div class="list" id="backList"></div>
       <button class="go" id="backOk">Prendre soin de lui</button>
+    </div>
+
+    <!-- Historique des jauges -->
+    <div class="overlay" id="histModal">
+      <button class="closeX" data-close="histModal">✕</button>
+      <div style="font-size:40px">📈</div>
+      <h1>Historique</h1>
+      <p style="margin-top:-6px" id="histSub">Évolution des jauges de ton compagnon.</p>
+      <canvas id="histCanvas" style="width:100%;max-width:320px;height:170px;background:#fff;border:1px solid #eadff8;border-radius:12px"></canvas>
+      <div class="hist-legend" id="histLegend"></div>
     </div>
 
     <!-- Boutique -->
@@ -307,7 +320,7 @@ function newPet(name) {
   const now = Date.now();
   const stats = {};
   CFG.needs.forEach(n => stats[n.key] = n.start);
-  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null };
+  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null, history: [], lastSample: 0 };
 }
 function migrate(p) {
   if (!p.stats) { // ancien format à plat
@@ -320,6 +333,8 @@ function migrate(p) {
   if (typeof p.coins !== "number") p.coins = 0;
   if (!p.inventory || typeof p.inventory !== "object") p.inventory = {};
   if (typeof p.equipped === "undefined") p.equipped = null;
+  if (!Array.isArray(p.history)) p.history = [];
+  if (typeof p.lastSample !== "number") p.lastSample = 0;
   return p;
 }
 const S = (k) => pet.stats[k];
@@ -1025,6 +1040,58 @@ function renderShop() {
 $("shopBtn").onclick = openShop;
 
 // ============================================================
+//  HISTORIQUE DES JAUGES — échantillonnage + graphe
+// ============================================================
+const HIST_MAX = 160, SAMPLE_MS = 120000;   // 1 point / 2 min, 160 points max (~5 h)
+const HIST_SERIES = [
+  { key: "h", label: "Faim", color: "#ff8a5b" },
+  { key: "f", label: "Bonheur", color: "#ffd23f" },
+  { key: "e", label: "Énergie", color: "#5bc0ff" },
+  { key: "y", label: "Propreté", color: "#4cd4b0" },
+  { key: "s", label: "Santé", color: "#ff6b8a" },
+];
+function recordSample() {
+  if (!pet || pet.dead) return;
+  pet.history = pet.history || [];
+  pet.history.push({ t: Date.now(), h: Math.round(S("hunger")), f: Math.round(S("fun")), e: Math.round(S("energy")), y: Math.round(S("hygiene")), s: Math.round(S("health")) });
+  if (pet.history.length > HIST_MAX) pet.history.splice(0, pet.history.length - HIST_MAX);
+  pet.lastSample = Date.now();
+}
+function openHistory() {
+  if (!pet) return;
+  $("histLegend").innerHTML = HIST_SERIES.map(s => '<span><i style="background:' + s.color + '"></i>' + s.label + '</span>').join("");
+  showOv("histModal"); drawHistory();
+}
+function drawHistory() {
+  const cv = $("histCanvas"), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = cv.getBoundingClientRect(), W = rect.width, H = rect.height;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const x = cv.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H);
+  const pad = 8, gw = W - pad * 2, gh = H - pad * 2;
+  x.strokeStyle = "#f1ecfb"; x.lineWidth = 1;
+  for (const gy of [0, 0.5, 1]) { const yy = pad + gh * gy; x.beginPath(); x.moveTo(pad, yy); x.lineTo(W - pad, yy); x.stroke(); }
+  const hist = pet.history || [];
+  if (hist.length < 2) {
+    x.fillStyle = "#b3a7d6"; x.font = "12px sans-serif"; x.textAlign = "center"; x.textBaseline = "middle";
+    x.fillText("Pas encore assez de données…", W / 2, H / 2);
+    $("histSub").textContent = "L'historique se remplit au fil du temps (1 point / 2 min).";
+    return;
+  }
+  const t0 = hist[0].t, t1 = hist[hist.length - 1].t, span = Math.max(1, t1 - t0);
+  for (const ser of HIST_SERIES) {
+    x.strokeStyle = ser.color; x.lineWidth = 2; x.lineJoin = "round"; x.beginPath();
+    hist.forEach((p, i) => {
+      const px = pad + gw * ((p.t - t0) / span), py = pad + gh * (1 - (p[ser.key] || 0) / 100);
+      i ? x.lineTo(px, py) : x.moveTo(px, py);
+    });
+    x.stroke();
+  }
+  $("histSub").textContent = "Sur " + fmtAge(span / 60000) + " · " + hist.length + " points";
+}
+$("histBtn").onclick = openHistory;
+window.addEventListener("resize", () => { if ($("histModal").classList.contains("show")) drawHistory(); });
+
+// ============================================================
 //  BOUCLES
 // ============================================================
 let last = performance.now();
@@ -1057,6 +1124,7 @@ setInterval(() => {
     }
     lastStageSeen = st;
     updateUI(); save();
+    if (Date.now() - (pet.lastSample || 0) > SAMPLE_MS) recordSample();
   }
   checkNeeds();
   if (++flushCtr >= 12) { flushCtr = 0; cloudFlush(); }   // envoi cloud ~toutes les 12 s
