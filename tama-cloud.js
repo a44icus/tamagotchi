@@ -81,6 +81,10 @@
     async leaderboard() { const { data, error } = await sb.rpc("get_leaderboard"); if (error) throw error; return data || []; },
     async leaderboardCat(cat) { const { data, error } = await sb.rpc("get_leaderboard_cat", { cat: cat || "age" }); if (error) throw error; return data || []; },
     async sendHug(petId) { const { data, error } = await sb.rpc("send_hug", { target: petId }); if (error) throw error; return data; },
+
+    // ---- Notifications push ----
+    async savePush(sub) { const { error } = await sb.rpc("save_push_subscription", { sub }); if (error) throw error; },
+    async deletePush(endpoint) { const { error } = await sb.rpc("delete_push_subscription", { ep: endpoint }); if (error) throw error; },
   };
 
   window.CLOUD = CLOUD;
