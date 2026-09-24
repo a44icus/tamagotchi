@@ -55,6 +55,13 @@
   .mrow .mi { font-size:17px; width:22px; text-align:center; flex:0 0 auto; }
   .mrow.off .mi { opacity:.4; }
   .msep { height:1px; background:#f0e9fb; margin:4px 8px; }
+  .god-label { font-size:11px; font-weight:800; color:#8a7fb0; padding:2px 12px 6px; }
+  .god-label #godTimeCur { color:#8a6cff; }
+  .god-times { display:flex; flex-wrap:wrap; gap:5px; padding:0 8px 4px; }
+  .god-times button { border:1px solid #e7ddf7; background:#fff; cursor:pointer; font-family:inherit;
+    font-size:11.5px; font-weight:700; color:#6a5b95; padding:6px 9px; border-radius:9px; transition:.1s; }
+  .god-times button:hover { background:#f6f1ff; }
+  .god-times button.on { background:#8a6cff; color:#fff; border-color:#8a6cff; }
   #splash { position:fixed; inset:0; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
     background:radial-gradient(1000px 620px at 50% 32%, #2a1e52 0%, #140e2c 72%); transition:opacity .55s ease; }
   #splash.hide { opacity:0; pointer-events:none; }
@@ -216,6 +223,17 @@
             <div class="msep"></div>
             <button class="mrow" id="accountBtn"><span class="mi">👤</span><span class="ml">Mon compte</span></button>
             <a class="mrow" href="admin.html"><span class="mi">⚙️</span><span class="ml">Espace admin</span></a>
+            <div class="god-block" id="godBlock" style="display:none">
+              <div class="msep"></div>
+              <div class="god-label">🛡️ Ambiance (test) <span id="godTimeCur">Auto</span></div>
+              <div class="god-times" id="godTimes">
+                <button data-t="" class="on">Auto</button>
+                <button data-t="morning">🌅 Matin</button>
+                <button data-t="day">☀️ Jour</button>
+                <button data-t="evening">🌆 Soir</button>
+                <button data-t="night">🌙 Nuit</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -393,6 +411,7 @@ let activePetId = null;   // id du Tamagotchi cloud actif
 let cloudDirty = false;
 let GOD = false;          // godmode admin : tout gratuit + invincible
 const ADMIN_EMAIL = "stephane.donchery@gmail.com";
+let TIME_OVERRIDE = null;  // godmode : force l'ambiance (morning/day/evening/night) ; null = heure réelle
 let SPRITE_BASE = CFG.kitBase;
 const SAVE_KEY = "tamagotchi_save_v2";
 
@@ -690,6 +709,7 @@ function activeScene() {
   return list.find(s => s.id === (pet && pet.scene)) || list.find(s => !s.price) || list[0] || null;
 }
 function timeKey() {
+  if (GOD && TIME_OVERRIDE) return TIME_OVERRIDE;   // godmode : ambiance forcée pour tester
   const R = CFG.room, hrs = (R && R.hours) || { morning: 6, day: 10, evening: 17, night: 20 };
   const h = new Date().getHours();
   if (h >= hrs.night || h < hrs.morning) return "night";
@@ -1057,6 +1077,7 @@ function updateUI() {
   CFG.needs.forEach(n => setBar(n.key, S(n.key)));
   updateButtonsState();
   renderSceneSwitch();
+  refreshGodUI();
 }
 let floatTimer;
 function floatMsg(txt) { const f = $("float"); f.textContent = txt; f.style.opacity = "1"; f.style.top = "14%"; clearTimeout(floatTimer); floatTimer = setTimeout(() => { f.style.opacity = "0"; f.style.top = "8%"; }, 900); }
@@ -1423,6 +1444,23 @@ $("appMenu").addEventListener("click", (e) => {
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".menu-wrap")) closeMenu();
   if (!e.target.closest("#sceneNav")) closeSceneNav();
+});
+
+// --- Godmode : forcer l'ambiance jour/nuit pour tester ---
+const GOD_TIME_LABELS = { "": "Auto", morning: "Matin", day: "Jour", evening: "Soir", night: "Nuit" };
+function refreshGodUI() {
+  const block = $("godBlock"); if (!block) return;
+  block.style.display = GOD ? "" : "none";
+  if (!GOD) { TIME_OVERRIDE = null; return; }
+  const cur = TIME_OVERRIDE || "";
+  const lbl = $("godTimeCur"); if (lbl) lbl.textContent = GOD_TIME_LABELS[cur];
+  document.querySelectorAll("#godTimes button").forEach(b => b.classList.toggle("on", (b.dataset.t || "") === cur));
+}
+document.querySelectorAll("#godTimes button").forEach(b => b.onclick = (e) => {
+  e.stopPropagation();                       // garde le menu ouvert pour enchaîner les tests
+  TIME_OVERRIDE = b.dataset.t || null;
+  refreshGodUI();
+  floatMsg("Ambiance : " + GOD_TIME_LABELS[b.dataset.t || ""]);
 });
 
 // --- Aménager la chambre : déplacer ses décos ---
