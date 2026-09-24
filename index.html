@@ -36,6 +36,13 @@
   .stage { font-size:12px; font-weight:700; color:#7a6ca0; background:#efe8ff; padding:4px 10px; border-radius:999px; }
   .admin-link { text-decoration:none; font-size:17px; opacity:.6; transition:.15s; }
   .admin-link:hover { opacity:1; transform:rotate(40deg); }
+  #splash { position:fixed; inset:0; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+    background:radial-gradient(1000px 620px at 50% 32%, #2a1e52 0%, #140e2c 72%); transition:opacity .55s ease; }
+  #splash.hide { opacity:0; pointer-events:none; }
+  #splash img { width:min(80vw, 440px); filter:drop-shadow(0 10px 32px rgba(138,108,255,.55)); animation:splashpop .8s cubic-bezier(.2,.9,.3,1.3); }
+  #splash .load { color:#c9bfff; font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; animation:splashpulse 1.2s ease-in-out infinite; }
+  @keyframes splashpop { 0%{ transform:scale(.82); opacity:0 } 100%{ transform:scale(1); opacity:1 } }
+  @keyframes splashpulse { 0%,100%{ opacity:.35 } 50%{ opacity:1 } }
   .hbtn { background:none; border:none; cursor:pointer; font-size:16px; line-height:1; padding:0; opacity:.6; transition:.15s; }
   .hbtn:hover { opacity:1; transform:scale(1.15); }
   .hbtn.off { opacity:.3; }
@@ -151,6 +158,7 @@
 </style>
 </head>
 <body>
+  <div id="splash"><img src="logo.png" alt="ETgotchi" /><div class="load">Chargement…</div></div>
   <div class="device">
     <div class="head">
       <div class="name">🐾 <span id="petName">…</span></div>
@@ -610,15 +618,24 @@ function drawRoom() {
 // ---- Boutique : catalogue, déco de chambre, accessoire porté ----
 // sprites PNG dans objets/ ; ay = position verticale (fraction de la taille du pet), ah = hauteur cible
 const SHOP = [
-  { id: "hat",      label: "Chapeau",   emoji: "🎩", price: 15, type: "wear", sprite: "objets/chapeau.png",   ay: 0.92, ah: 0.55 },
-  { id: "bow",      label: "Nœud",      emoji: "🎀", price: 10, type: "wear", sprite: "objets/noeud.png",     ay: 0.86, ah: 0.36 },
-  { id: "glasses",  label: "Lunettes",  emoji: "🕶️", price: 20, type: "wear", sprite: "objets/lunettes.png",  ay: 0.64, ah: 0.30 },
-  { id: "crown",    label: "Couronne",  emoji: "👑", price: 45, type: "wear", sprite: "objets/couronne.png",  ay: 0.92, ah: 0.46 },
-  { id: "stars",    label: "Étoiles",   emoji: "⭐", price: 8,  type: "room", sprite: "objets/etoiles.png",   x: 0.5,  y: 0.15, ah: 0.16 },
-  { id: "balloons", label: "Ballons",   emoji: "🎈", price: 12, type: "room", sprite: "objets/ballons.png",   x: 0.14, y: 0.32, ah: 0.36 },
-  { id: "garland",  label: "Guirlande", emoji: "🎉", price: 18, type: "room", sprite: "objets/guirlande.png", x: 0.82, y: 0.18, ah: 0.20 },
-  { id: "plant",    label: "Plante",    emoji: "🪴", price: 14, type: "room", sprite: "objets/plante.png",    x: 0.9,  y: 0.68, ah: 0.28 },
-  { id: "cake",     label: "Gâteau",    emoji: "🎂", price: 25, type: "room", sprite: "objets/gateau.png",    x: 0.12, y: 0.72, ah: 0.24 },
+  // Costumes (le déguisement d'E.T.) — portés par le compagnon (un seul à la fois)
+  { id: "flowerhat", label: "Chapeau à fleurs", emoji: "🌸", price: 15, type: "wear", sprite: "objets/costumes/02_flower_hat.png",        ay: 0.92, ah: 0.5 },
+  { id: "wig",       label: "Perruque blonde",  emoji: "👱", price: 18, type: "wear", sprite: "objets/costumes/01_blonde_wig.png",         ay: 0.94, ah: 0.55 },
+  { id: "necklace",  label: "Collier de perles",emoji: "📿", price: 20, type: "wear", sprite: "objets/costumes/03_pearl_necklace.png",     ay: 0.6,  ah: 0.28 },
+  { id: "stole",     label: "Étole",            emoji: "🧣", price: 25, type: "wear", sprite: "objets/costumes/04_fur_stole.png",          ay: 0.66, ah: 0.34 },
+  { id: "dress",     label: "Robe de Gertie",   emoji: "👗", price: 30, type: "wear", sprite: "objets/costumes/05_gertie_dress.png",       ay: 0.5,  ah: 0.62 },
+  { id: "ghost",     label: "Déguisement fantôme", emoji: "👻", price: 35, type: "wear", sprite: "objets/costumes/06_ghost_sheet_costume.png", ay: 0.58, ah: 0.95 },
+  // Déco de chambre — objets cultes du film
+  { id: "comic",     label: "BD",               emoji: "📖", price: 10, type: "room", sprite: "objets/props/02_comic_page.png",              x: 0.2,  y: 0.72, ah: 0.16 },
+  { id: "flower",    label: "Chrysanthème",     emoji: "🌼", price: 14, type: "room", sprite: "objets/props/03_potted_chrysanthemum.png",    x: 0.9,  y: 0.68, ah: 0.26 },
+  { id: "phone",     label: "Téléphone rétro",  emoji: "☎️", price: 16, type: "room", sprite: "objets/props/01_retro_telephone.png",         x: 0.12, y: 0.52, ah: 0.2 },
+  { id: "umbrella",  label: "Parapluie alu",    emoji: "☂️", price: 16, type: "room", sprite: "objets/communicator/04_foil_umbrella.png",    x: 0.86, y: 0.34, ah: 0.3 },
+  { id: "walkie",    label: "Talkie-walkie",    emoji: "📻", price: 18, type: "room", sprite: "objets/communicator/07_walkie_talkie.png",    x: 0.28, y: 0.55, ah: 0.16 },
+  { id: "solar",     label: "Système solaire",  emoji: "🪐", price: 22, type: "room", sprite: "objets/props/04_solar_system_spheres.png",    x: 0.5,  y: 0.15, ah: 0.18 },
+  { id: "record",    label: "Tourne-disque",    emoji: "🎵", price: 26, type: "room", sprite: "objets/communicator/02_record_player.png",    x: 0.16, y: 0.66, ah: 0.24 },
+  { id: "speakspell",label: "Speak & Spell",    emoji: "🔤", price: 28, type: "room", sprite: "objets/communicator/01_speak_and_spell.png",  x: 0.8,  y: 0.76, ah: 0.22 },
+  { id: "phonehome", label: "Téléphone maison", emoji: "📡", price: 45, type: "room", sprite: "objets/communicator/08_phone_home_communicator.png", x: 0.24, y: 0.28, ah: 0.28 },
+  { id: "bike",      label: "Vélo",             emoji: "🚲", price: 50, type: "room", sprite: "objets/props/05_bicycle_with_basket.png",     x: 0.76, y: 0.78, ah: 0.34 },
 ];
 SHOP.forEach(it => it.sprite && loadImg(it.sprite));   // préchargement
 function emojiAt(e, x, y, px) {
@@ -1561,6 +1578,12 @@ async function boot() {
   else { authSignup = false; refreshAuthMode(); showOv("auth"); }
 }
 boot();
+
+// Écran de démarrage (logo) : affiché ~2,4 s puis fondu
+setTimeout(() => {
+  const s = document.getElementById("splash");
+  if (s) { s.classList.add("hide"); setTimeout(() => s.remove(), 600); }
+}, 2400);
 </script>
 </body>
 </html>

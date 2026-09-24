@@ -1,42 +1,324 @@
 {
-  "theme": "Accessoires spatiaux kawaii",
-  "format": "PNG transparent",
-  "files": [
-    {
-      "name": "chapeau.png",
-      "source": "/mnt/data/chapeau_de_sorcier_cosmique_en_peluche.png"
-    },
-    {
-      "name": "noeud.png",
-      "source": "/mnt/data/nœud_spatial_rouge_pastel_en_peluche.png"
-    },
-    {
-      "name": "lunettes.png",
-      "source": "/mnt/data/lunettes_kawaii_célestes_dorées.png"
-    },
-    {
-      "name": "couronne.png",
-      "source": "/mnt/data/couronne_céleste_dorée_scintillante.png"
-    },
-    {
-      "name": "etoiles.png",
-      "source": "/mnt/data/trio_d_étoiles_kawaii_dorées_scintillantes.png"
-    },
-    {
-      "name": "ballons.png",
-      "source": "/mnt/data/bouquet_de_ballons_galactiques_magiques.png"
-    },
-    {
-      "name": "guirlande.png",
-      "source": "/mnt/data/guirlande_spatiale_kawaii_lumineuse.png"
-    },
-    {
-      "name": "plante.png",
-      "source": "/mnt/data/plante_spatiale_dans_un_pot_étoilé.png"
-    },
-    {
-      "name": "gateau.png",
-      "source": "/mnt/data/gâteau_d_anniversaire_cosmique_kawaii.png"
-    }
-  ]
+  "kit_name": "Kit accessoires E.T. kawaii corrigé",
+  "note": "Sprites séparés manuellement pour éviter les débordements entre objets.",
+  "canvas_size": {
+    "width": 512,
+    "height": 512
+  },
+  "folders": {
+    "costumes": [
+      {
+        "file": "costumes/01_blonde_wig.png",
+        "source_sheet": "a_clean_transparent_background_checkerboard_trans_1.png",
+        "crop_box": [
+          15,
+          190,
+          310,
+          545
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "costumes/02_flower_hat.png",
+        "source_sheet": "a_clean_transparent_background_checkerboard_trans_1.png",
+        "crop_box": [
+          305,
+          215,
+          715,
+          545
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "costumes/03_pearl_necklace.png",
+        "source_sheet": "a_clean_transparent_background_checkerboard_trans_1.png",
+        "crop_box": [
+          725,
+          215,
+          955,
+          560
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "costumes/04_fur_stole.png",
+        "source_sheet": "a_clean_transparent_background_checkerboard_trans_1.png",
+        "crop_box": [
+          960,
+          205,
+          1245,
+          575
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "costumes/05_gertie_dress.png",
+        "source_sheet": "a_clean_transparent_background_checkerboard_trans_1.png",
+        "crop_box": [
+          10,
+          600,
+          390,
+          1045
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "costumes/06_ghost_sheet_costume.png",
+        "source_sheet": "a_clean_transparent_background_checkerboard_trans_1.png",
+        "crop_box": [
+          365,
+          600,
+          730,
+          1070
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "communicator": [
+      {
+        "file": "communicator/01_speak_and_spell.png",
+        "source_sheet": "a_clean_transparent_background_png_style_illustrat_2_batch_1.png",
+        "crop_box": [
+          10,
+          205,
+          355,
+          620
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "communicator/02_record_player.png",
+        "source_sheet": "a_clean_transparent_background_png_style_illustrat_2_batch_1.png",
+        "crop_box": [
+          350,
+          220,
+          705,
+          625
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "communicator/03_metal_reflector_disc.png",
+        "source_sheet": "a_clean_transparent_background_png_style_illustrat_2_batch_1.png",
+        "crop_box": [
+          690,
+          225,
+          1085,
+          625
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "communicator/04_foil_umbrella.png",
+        "source_sheet": "a_clean_transparent_background_png_style_illustrat_2_batch_1.png",
+        "crop_box": [
+          1065,
+          25,
+          1230,
+          625
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "communicator/05_coffee_can.png",
+        "source_sheet": "a_clean_transparent_background_png_style_illustrat_2_batch_1.png",
+        "crop_box": [
+          35,
+          815,
+          270,
+          1165
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "communicator/06_wooden_hanger.png",
+        "source_sheet": "a_clean_transparent_background_png_style_illustrat_2_batch_1.png",
+        "crop_box": [
+          280,
+          805,
+          730,
+          1155
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "communicator/07_walkie_talkie.png",
+        "source_sheet": "a_clean_transparent_background_png_style_illustrat_2_batch_1.png",
+        "crop_box": [
+          735,
+          610,
+          920,
+          1175
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "communicator/08_phone_home_communicator.png",
+        "source_sheet": "a_clean_transparent_background_png_style_illustrat_2_batch_1.png",
+        "crop_box": [
+          900,
+          615,
+          1242,
+          1198
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ],
+    "props": [
+      {
+        "file": "props/01_retro_telephone.png",
+        "source_sheet": "a_clean_white_transparent_background_composite_ima_3_batch_2.png",
+        "crop_box": [
+          15,
+          270,
+          355,
+          590
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "props/02_comic_page.png",
+        "source_sheet": "a_clean_white_transparent_background_composite_ima_3_batch_2.png",
+        "crop_box": [
+          350,
+          185,
+          655,
+          610
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "props/03_potted_chrysanthemum.png",
+        "source_sheet": "a_clean_white_transparent_background_composite_ima_3_batch_2.png",
+        "crop_box": [
+          650,
+          185,
+          980,
+          615
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "props/04_solar_system_spheres.png",
+        "source_sheet": "a_clean_white_transparent_background_composite_ima_3_batch_2.png",
+        "crop_box": [
+          980,
+          205,
+          1254,
+          570
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "props/05_bicycle_with_basket.png",
+        "source_sheet": "a_clean_white_transparent_background_composite_ima_3_batch_2.png",
+        "crop_box": [
+          20,
+          665,
+          445,
+          1125
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "props/06_front_basket.png",
+        "source_sheet": "a_clean_white_transparent_background_composite_ima_3_batch_2.png",
+        "crop_box": [
+          415,
+          805,
+          735,
+          1095
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "props/07_beer_can.png",
+        "source_sheet": "a_clean_white_transparent_background_composite_ima_3_batch_2.png",
+        "crop_box": [
+          735,
+          720,
+          940,
+          1095
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      },
+      {
+        "file": "props/08_wilted_flowerpot.png",
+        "source_sheet": "a_clean_white_transparent_background_composite_ima_3_batch_2.png",
+        "crop_box": [
+          945,
+          700,
+          1254,
+          1100
+        ],
+        "size": {
+          "width": 512,
+          "height": 512
+        }
+      }
+    ]
+  }
 }

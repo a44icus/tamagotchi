@@ -124,7 +124,7 @@
       coinsPerCare: 1,               // pièces gagnées par soin (nourrir/laver/soigner/câliner)
       minigameCoinsPerPoint: 1,      // pièces par bonbon attrapé au mini-jeu
       poopCoins: 1,                  // pièces par crotte ramassée
-      prices: { hat: 20, bow: 14, glasses: 30, crown: 70, stars: 12, balloons: 20, garland: 28, plant: 22, cake: 40 },
+      prices: { flowerhat: 15, wig: 18, necklace: 20, stole: 25, dress: 30, ghost: 35, comic: 10, flower: 14, phone: 16, umbrella: 16, walkie: 18, solar: 22, record: 26, speakspell: 28, phonehome: 45, bike: 50 },
     },
     // Mini-jeu « Jouer »
     minigame: { durationSec: 18, bombRate: 0.17, funMax: 40 },
