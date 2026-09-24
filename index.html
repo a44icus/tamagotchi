@@ -50,6 +50,15 @@
   #arrangeBar { position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:6; display:none; align-items:center; gap:10px; background:rgba(51,41,74,.82); color:#fff; font-size:12px; font-weight:700; padding:7px 10px 7px 14px; border-radius:999px; backdrop-filter:blur(3px); }
   #arrangeBar.show { display:flex; }
   #arrangeBar button { border:none; cursor:pointer; background:#8a6cff; color:#fff; font-weight:800; font-size:12px; padding:5px 12px; border-radius:999px; }
+  /* sélecteur de scène sur l'écran */
+  #sceneSwitch { position:absolute; top:10px; left:10px; z-index:6; display:none; gap:6px; max-width:calc(100% - 20px);
+    overflow-x:auto; padding:4px; background:rgba(51,41,74,.55); border-radius:999px; backdrop-filter:blur(3px); -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  #sceneSwitch::-webkit-scrollbar { display:none; }
+  #sceneSwitch.show { display:flex; }
+  #sceneSwitch button { flex:0 0 auto; border:none; cursor:pointer; background:rgba(255,255,255,.85); color:#5a4b8a;
+    font-weight:800; font-size:12px; padding:6px 12px; border-radius:999px; white-space:nowrap; transition:background .15s, color .15s; }
+  #sceneSwitch button.on { background:#8a6cff; color:#fff; }
+  #sceneSwitch button.locked { opacity:.6; }
   .tabs { display:flex; gap:8px; margin-bottom:4px; flex-wrap:wrap; justify-content:center; }
   .tab { border:1px solid #e0d4f7; background:#fff; color:#8a6cff; font-weight:700; font-size:12px; padding:6px 12px; border-radius:999px; cursor:pointer; }
   .tab.on { background:#8a6cff; color:#fff; border-color:#8a6cff; }
@@ -177,6 +186,7 @@
 
     <div class="screen">
       <canvas id="cv"></canvas>
+      <div id="sceneSwitch"></div>
       <div id="float"></div>
       <div id="progress"><div class="pbar"><span id="pfill"></span></div><div class="plabel" id="plabel"></div></div>
       <div id="arrangeBar"><span>🎨 Fais glisser tes décos</span><button id="arrangeDone">✓ Terminé</button></div>
@@ -1006,6 +1016,7 @@ function updateUI() {
   $("coinTxt").textContent = GOD ? "🛡️ ∞" : "🪙 " + (pet.coins || 0);
   CFG.needs.forEach(n => setBar(n.key, S(n.key)));
   updateButtonsState();
+  renderSceneSwitch();
 }
 let floatTimer;
 function floatMsg(txt) { const f = $("float"); f.textContent = txt; f.style.opacity = "1"; f.style.top = "14%"; clearTimeout(floatTimer); floatTimer = setTimeout(() => { f.style.opacity = "0"; f.style.top = "8%"; }, 900); }
@@ -1305,12 +1316,39 @@ function buyScene(sc) {
   if (!pet) return;
   const owned = !sc.price || GOD || (pet.scenes && pet.scenes[sc.id]);
   if (owned) {
-    if (pet.scene !== sc.id) { pet.scene = sc.id; pet.scenes = pet.scenes || {}; pet.scenes[sc.id] = true; preloadScene(sc); sfx("ok"); floatMsg("Scène : " + sc.label); save(); renderScenes(); }
+    if (pet.scene !== sc.id) { pet.scene = sc.id; pet.scenes = pet.scenes || {}; pet.scenes[sc.id] = true; preloadScene(sc); sfx("ok"); floatMsg("Scène : " + sc.label); save(); renderScenes(); renderSceneSwitch(); }
     return;
   }
   if (!GOD && (pet.coins || 0) < (sc.price || 0)) { floatMsg("Pas assez de pièces 🪙"); sfx("alert"); return; }
   pet.coins = Math.max(0, (pet.coins || 0) - (GOD ? 0 : sc.price)); pet.scenes = pet.scenes || {}; pet.scenes[sc.id] = true; pet.scene = sc.id;
-  preloadScene(sc); sfx("coin"); floatMsg(sc.label + (GOD ? " débloquée 🛡️" : " débloquée ! 🎉")); save(); updateUI(); renderScenes();
+  preloadScene(sc); sfx("coin"); floatMsg(sc.label + (GOD ? " débloquée 🛡️" : " débloquée ! 🎉")); save(); updateUI(); renderScenes(); renderSceneSwitch();
+}
+// Sélecteur de scène sur l'écran de jeu (changement rapide, sans passer par la boutique)
+function renderSceneSwitch() {
+  const bar = $("sceneSwitch"); if (!bar) return;
+  const list = CFG.scenes || [];
+  if (!pet || list.length < 2) { bar.classList.remove("show"); return; }
+  bar.innerHTML = "";
+  list.forEach(sc => {
+    const owned = !sc.price || GOD || (pet.scenes && pet.scenes[sc.id]);
+    const active = pet.scene === sc.id;
+    const b = document.createElement("button");
+    b.textContent = (owned ? "" : "🔒 ") + sc.label;
+    b.className = (active ? "on" : "") + (owned ? "" : " locked");
+    b.onclick = () => {
+      if (owned) {
+        if (pet.scene === sc.id) return;
+        buyScene(sc);           // scène possédée → activation directe
+        renderSceneSwitch();
+      } else {
+        openShop();             // scène verrouillée → boutique, onglet Scènes
+        const tab = document.querySelector('#shopTabs .tab[data-shop="scenes"]');
+        if (tab) tab.click();
+      }
+    };
+    bar.appendChild(b);
+  });
+  bar.classList.add("show");
 }
 // onglets Objets / Scènes
 document.querySelectorAll("#shopTabs .tab").forEach(t => t.onclick = () => {

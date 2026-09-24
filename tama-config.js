@@ -153,9 +153,13 @@
     // Scènes déblocables (achat en pièces) : chaque scène a son cycle jour/nuit.
     // price 0 = débloquée d'office. Convention images : scenes/<id>/{matin,midi,fin_journee,nuit}.png
     scenes: [
-      { id: "chambre", label: "Chambre d'Elliott", price: 0,  morning: "scenes/chambre/matin.png", day: "scenes/chambre/midi.png", evening: "scenes/chambre/fin_journee.png", night: "scenes/chambre/nuit.png" },
-      { id: "garage",  label: "Le garage",         price: 40, morning: "scenes/garage/matin.png",  day: "scenes/garage/midi.png",  evening: "scenes/garage/fin_journee.png",  night: "scenes/garage/nuit.png" },
-      { id: "foret",   label: "La forêt",          price: 60, morning: "scenes/foret/matin.png",   day: "scenes/foret/midi.png",   evening: "scenes/foret/fin_journee.png",   night: "scenes/foret/nuit.png" },
+      { id: "chambre",  label: "Chambre d'Elliott", price: 0,   morning: "scenes/chambre/matin.png", day: "scenes/chambre/midi.png", evening: "scenes/chambre/fin_journee.png", night: "scenes/chambre/nuit.png" },
+      { id: "garage",   label: "Le garage",         price: 40,  morning: "scenes/garage/matin.png",  day: "scenes/garage/midi.png",  evening: "scenes/garage/fin_journee.png",  night: "scenes/garage/nuit.png" },
+      { id: "foret",    label: "La forêt",          price: 60,  morning: "scenes/foret/matin.png",   day: "scenes/foret/midi.png",   evening: "scenes/foret/fin_journee.png",   night: "scenes/foret/nuit.png" },
+      { id: "cuisine",  label: "La cuisine",        price: 80,  morning: "scenes/cuisine/01_matin.png", day: "scenes/cuisine/02_jour.png", evening: "scenes/cuisine/03_soir.png", night: "scenes/cuisine/04_nuit.png" },
+      { id: "peluches", label: "Le coin peluches",  price: 100, morning: "scenes/coin_peluches/01_matin.png", day: "scenes/coin_peluches/02_jour.png", evening: "scenes/coin_peluches/03_soir.png", night: "scenes/coin_peluches/04_nuit.png" },
+      { id: "cabanon",  label: "Le cabanon 📞",     price: 120, morning: "scenes/cabanon_phone_home/01_matin.png", day: "scenes/cabanon_phone_home/02_jour.png", evening: "scenes/cabanon_phone_home/03_soir.png", night: "scenes/cabanon_phone_home/04_nuit.png" },
+      { id: "halloween", label: "La rue d'Halloween", price: 150, morning: "scenes/rue_halloween/01_matin.png", day: "scenes/rue_halloween/02_jour.png", evening: "scenes/rue_halloween/03_soir.png", night: "scenes/rue_halloween/04_nuit.png" },
     ],
   };
 
