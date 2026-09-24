@@ -225,7 +225,8 @@
             <a class="mrow" href="admin.html"><span class="mi">⚙️</span><span class="ml">Espace admin</span></a>
             <div class="god-block" id="godBlock" style="display:none">
               <div class="msep"></div>
-              <div class="god-label">🛡️ Ambiance (test) <span id="godTimeCur">Auto</span></div>
+              <button class="mrow" id="godToggle"><span class="mi">🛡️</span><span class="ml">Godmode&nbsp;: <b id="godState">activé</b></span></button>
+              <div class="god-label">🕑 Ambiance (test) <span id="godTimeCur">Auto</span></div>
               <div class="god-times" id="godTimes">
                 <button data-t="" class="on">Auto</button>
                 <button data-t="morning">🌅 Matin</button>
@@ -409,7 +410,8 @@ let CFG = TAMA.load();   // provisoire : remplacé par la config cloud au démar
 let MODE = "guest";       // "guest" (localStorage) ou "cloud" (Supabase)
 let activePetId = null;   // id du Tamagotchi cloud actif
 let cloudDirty = false;
-let GOD = false;          // godmode admin : tout gratuit + invincible
+let ADMIN = false;        // compte admin détecté (éligible au godmode)
+let GOD = false;          // godmode actif : tout gratuit + invincible (basculable par l'admin)
 const ADMIN_EMAIL = "stephane.donchery@gmail.com";
 let TIME_OVERRIDE = null;  // godmode : force l'ambiance (morning/day/evening/night) ; null = heure réelle
 let SPRITE_BASE = CFG.kitBase;
@@ -1438,7 +1440,7 @@ $("menuBtn").onclick = (e) => {
 // Les bascules Son/Alertes gardent le menu ouvert ; les autres entrées le referment.
 $("appMenu").addEventListener("click", (e) => {
   const row = e.target.closest(".mrow"); if (!row) return;
-  if (row.id !== "soundBtn" && row.id !== "notifBtn") closeMenu();
+  if (row.id !== "soundBtn" && row.id !== "notifBtn" && row.id !== "godToggle") closeMenu();
 });
 // Clic hors d'un menu → on referme
 document.addEventListener("click", (e) => {
@@ -1450,14 +1452,29 @@ document.addEventListener("click", (e) => {
 const GOD_TIME_LABELS = { "": "Auto", morning: "Matin", day: "Jour", evening: "Soir", night: "Nuit" };
 function refreshGodUI() {
   const block = $("godBlock"); if (!block) return;
-  block.style.display = GOD ? "" : "none";
-  if (!GOD) { TIME_OVERRIDE = null; return; }
+  if (!ADMIN) GOD = false;                    // sécurité : jamais de godmode hors compte admin
+  block.style.display = ADMIN ? "" : "none";  // le bloc reste visible pour pouvoir réactiver
+  if (!ADMIN) { TIME_OVERRIDE = null; return; }
+  const st = $("godState"); if (st) st.textContent = GOD ? "activé" : "désactivé";
+  $("godToggle")?.classList.toggle("off", !GOD);
+  if (!GOD) TIME_OVERRIDE = null;
   const cur = TIME_OVERRIDE || "";
   const lbl = $("godTimeCur"); if (lbl) lbl.textContent = GOD_TIME_LABELS[cur];
   document.querySelectorAll("#godTimes button").forEach(b => b.classList.toggle("on", (b.dataset.t || "") === cur));
+  const times = $("godTimes");                // ambiance grisée quand godmode off
+  if (times) { times.style.opacity = GOD ? "1" : ".4"; times.style.pointerEvents = GOD ? "" : "none"; }
 }
+$("godToggle").onclick = (e) => {
+  e.stopPropagation();                        // garde le menu ouvert
+  if (!ADMIN) return;
+  GOD = !GOD; lsSet("tama_god", GOD ? "1" : "0");
+  floatMsg(GOD ? "🛡️ Godmode activé" : "Godmode désactivé — besoins réels");
+  updateUI();
+  if ($("shopModal").classList.contains("show")) { renderShop(); renderScenes(); }
+};
 document.querySelectorAll("#godTimes button").forEach(b => b.onclick = (e) => {
-  e.stopPropagation();                       // garde le menu ouvert pour enchaîner les tests
+  e.stopPropagation();                        // garde le menu ouvert pour enchaîner les tests
+  if (!GOD) return;
   TIME_OVERRIDE = b.dataset.t || null;
   refreshGodUI();
   floatMsg("Ambiance : " + GOD_TIME_LABELS[b.dataset.t || ""]);
@@ -1652,7 +1669,8 @@ function enterGuest() {
 async function enterCloud() {
   MODE = "cloud"; hideOv("auth");
   const u = await CLOUD.currentUser().catch(() => null);
-  GOD = !!(u && u.email && u.email.toLowerCase() === ADMIN_EMAIL);
+  ADMIN = !!(u && u.email && u.email.toLowerCase() === ADMIN_EMAIL);
+  GOD = ADMIN && lsGet("tama_god", "1") !== "0";   // godmode ON par défaut pour l'admin, sauf s'il l'a désactivé
   if (GOD) setTimeout(() => floatMsg("🛡️ Godmode activé"), 400);
   let pets = [];
   try { pets = await CLOUD.listPets(); } catch { pets = []; }
