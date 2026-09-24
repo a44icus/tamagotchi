@@ -537,9 +537,37 @@ cv.addEventListener("pointerup", (e) => {
   if (moved < 6) tapClean(e);   // tap franc (pas un balayage) → nettoyer une crotte
 });
 cv.addEventListener("pointercancel", () => { panDrag = null; decorDrag = null; });
+// --- toucher le personnage : réactions mignonnes ---
+const PET_REACTIONS = [
+  { pose: "happy",   msg: "Hihi ! 😄",     s: "play",   fx: "icons/11_small_sparkle.png" },
+  { pose: "teddy",   msg: "Un câlin ? 🤗", s: "cuddle", fx: "icons/13_heart_glow.png" },
+  { pose: "dance",   msg: "Youpi ! 🎶",    s: "play",   fx: "icons/12_big_sparkle.png" },
+  { pose: "victory", msg: "❤️",            s: "cuddle", fx: "icons/13_heart_glow.png" },
+  { pose: "happy",   msg: "Coucou ! 👋",   s: "ok",     fx: "icons/11_small_sparkle.png" },
+];
+let lastPetTap = 0, petTapIdx = -1;
+function petHit(tx, ty) {
+  if (!pet || pet.dead) return false;
+  const stage = currentStage(), cx = creature.x * W + roomPanX;
+  const baseY = stage.key === "egg" ? H * 0.84 : H * floorY();
+  const ch = H * (stage.scale > 1 ? stage.scale / 100 : stage.scale), halfW = ch * 0.4;
+  return tx > cx - halfW && tx < cx + halfW && ty > baseY - ch && ty < baseY + ch * 0.06;
+}
+function petReact() {
+  if (!pet || pet.dead) return;
+  if (pet.asleep) { sfx("ok"); floatMsg("Chhht… il dort 💤"); return; }
+  const now = performance.now();
+  if (currentStage().key === "egg") { burst("icons/11_small_sparkle.png", 5); sfx("ok"); floatMsg("L'œuf frémit ! 🥚"); return; }
+  petTapIdx = (petTapIdx + 1 + Math.floor(Math.random() * 2)) % PET_REACTIONS.length;   // varie
+  const r = PET_REACTIONS[petTapIdx];
+  setPose(r.pose, 1200); burst(r.fx, 6); sfx(r.s); floatMsg(r.msg);
+  if (now - lastPetTap > 3000) { setS("fun", S("fun") + 2); lastPetTap = now; save(); updateUI(); }   // bonus limité (anti-spam)
+}
 function tapClean(e) {
-  if (!pet || pet.dead || !pet.poops || !pet.poops.length) return;
+  if (!pet || pet.dead) return;
   const r = cv.getBoundingClientRect(), tx = e.clientX - r.left, ty = e.clientY - r.top;
+  if (petHit(tx, ty)) { petReact(); return; }   // 1) toucher le perso → réaction
+  if (!pet.poops || !pet.poops.length) return;   // 2) sinon, ramasser une crotte
   const hitR = Math.max(24, W * 0.06);
   for (let i = 0; i < pet.poops.length; i++) {
     const p = pet.poops[i], px = p.x * W + roomPanX, py = H * (0.9 + (p.x % 0.05));
