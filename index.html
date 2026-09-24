@@ -30,12 +30,31 @@
     border-radius:34px; box-shadow:0 24px 60px rgba(90,60,140,.28), inset 0 2px 0 #fff;
     padding:16px 16px 20px; position:relative;
   }
-  .head { display:flex; align-items:center; justify-content:space-between; padding:2px 6px 10px; }
-  .name { font-weight:800; font-size:18px; display:flex; align-items:center; gap:6px; }
-  .head-right { display:flex; align-items:center; gap:8px; }
-  .stage { font-size:12px; font-weight:700; color:#7a6ca0; background:#efe8ff; padding:4px 10px; border-radius:999px; }
-  .admin-link { text-decoration:none; font-size:17px; opacity:.6; transition:.15s; }
-  .admin-link:hover { opacity:1; transform:rotate(40deg); }
+  .head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:2px 4px 12px; }
+  .name { font-weight:800; font-size:18px; display:flex; align-items:center; flex-wrap:wrap; gap:4px 8px; min-width:0; }
+  .name > span#petName { max-width:42vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .head-right { display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+  .stage { font-size:11px; font-weight:700; color:#7a6ca0; background:#efe8ff; padding:3px 9px; border-radius:999px; }
+  /* Boutons pilule du header (Boutique, Menu) */
+  .pill-btn { width:38px; height:38px; border-radius:12px; border:1px solid #e7ddf7; background:#fff; cursor:pointer;
+    font-size:17px; line-height:1; display:flex; align-items:center; justify-content:center; color:#6a5b95;
+    box-shadow:0 2px 5px rgba(120,90,200,.10); transition:transform .1s, box-shadow .1s, background .1s; }
+  .pill-btn:hover { background:#f6f1ff; }
+  .pill-btn:active { transform:scale(.94); }
+  /* Menu déroulant (commandes secondaires) */
+  .menu-wrap { position:relative; }
+  .menu { position:absolute; top:46px; right:0; z-index:30; min-width:210px; background:#fff; border:1px solid #eadff8;
+    border-radius:16px; box-shadow:0 16px 40px rgba(90,60,140,.24); padding:6px;
+    display:none; flex-direction:column; gap:2px; }
+  .menu.show { display:flex; animation:menupop .14s ease; }
+  @keyframes menupop { from{ opacity:0; transform:translateY(-6px) } to{ opacity:1; transform:none } }
+  .mrow { display:flex; align-items:center; gap:11px; width:100%; border:none; background:none; cursor:pointer;
+    padding:10px 12px; border-radius:11px; font-family:inherit; font-size:13.5px; font-weight:700; color:#5a4b8a;
+    text-align:left; text-decoration:none; transition:background .1s; }
+  .mrow:hover { background:#f4efff; }
+  .mrow .mi { font-size:17px; width:22px; text-align:center; flex:0 0 auto; }
+  .mrow.off .mi { opacity:.4; }
+  .msep { height:1px; background:#f0e9fb; margin:4px 8px; }
   #splash { position:fixed; inset:0; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
     background:radial-gradient(1000px 620px at 50% 32%, #2a1e52 0%, #140e2c 72%); transition:opacity .55s ease; }
   #splash.hide { opacity:0; pointer-events:none; }
@@ -50,15 +69,25 @@
   #arrangeBar { position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:6; display:none; align-items:center; gap:10px; background:rgba(51,41,74,.82); color:#fff; font-size:12px; font-weight:700; padding:7px 10px 7px 14px; border-radius:999px; backdrop-filter:blur(3px); }
   #arrangeBar.show { display:flex; }
   #arrangeBar button { border:none; cursor:pointer; background:#8a6cff; color:#fff; font-weight:800; font-size:12px; padding:5px 12px; border-radius:999px; }
-  /* sélecteur de scène sur l'écran */
-  #sceneSwitch { position:absolute; top:10px; left:10px; z-index:6; display:none; gap:6px; max-width:calc(100% - 20px);
-    overflow-x:auto; padding:4px; background:rgba(51,41,74,.55); border-radius:999px; backdrop-filter:blur(3px); -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-  #sceneSwitch::-webkit-scrollbar { display:none; }
-  #sceneSwitch.show { display:flex; }
-  #sceneSwitch button { flex:0 0 auto; border:none; cursor:pointer; background:rgba(255,255,255,.85); color:#5a4b8a;
-    font-weight:800; font-size:12px; padding:6px 12px; border-radius:999px; white-space:nowrap; transition:background .15s, color .15s; }
-  #sceneSwitch button.on { background:#8a6cff; color:#fff; }
-  #sceneSwitch button.locked { opacity:.6; }
+  /* sélecteur de scène compact (une pastille + liste déroulante) */
+  #sceneNav { position:absolute; top:10px; left:10px; z-index:7; display:none; }
+  #sceneNav.show { display:block; }
+  #sceneToggle { display:flex; align-items:center; gap:6px; border:none; cursor:pointer; color:#4a3d6e;
+    background:rgba(255,255,255,.9); font-weight:800; font-size:12.5px; padding:7px 12px; border-radius:999px;
+    box-shadow:0 3px 10px rgba(60,40,110,.22); backdrop-filter:blur(3px); max-width:220px; }
+  #sceneToggle #sceneCur { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #sceneToggle .chev { transition:transform .18s; font-size:10px; opacity:.7; }
+  #sceneNav.open #sceneToggle .chev { transform:rotate(180deg); }
+  #sceneMenu { display:none; margin-top:6px; background:#fff; border-radius:14px; padding:5px; min-width:180px; max-width:240px;
+    box-shadow:0 14px 34px rgba(60,40,110,.28); max-height:60vh; overflow:auto; }
+  #sceneNav.open #sceneMenu { display:block; }
+  #sceneMenu button { display:flex; align-items:center; gap:8px; width:100%; border:none; cursor:pointer; background:none;
+    padding:9px 11px; border-radius:10px; font-family:inherit; font-weight:700; font-size:13px; color:#5a4b8a; text-align:left;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:background .1s; }
+  #sceneMenu button:hover { background:#f4efff; }
+  #sceneMenu button.on { background:#8a6cff; color:#fff; }
+  #sceneMenu button.locked { color:#a99cc8; }
+  #sceneMenu button .price { margin-left:auto; font-size:11px; font-weight:800; opacity:.85; }
   .tabs { display:flex; gap:8px; margin-bottom:4px; flex-wrap:wrap; justify-content:center; }
   .tab { border:1px solid #e0d4f7; background:#fff; color:#8a6cff; font-weight:700; font-size:12px; padding:6px 12px; border-radius:999px; cursor:pointer; }
   .tab.on { background:#8a6cff; color:#fff; border-color:#8a6cff; }
@@ -90,15 +119,16 @@
   #progress .pbar span { display:block; height:100%; width:0%; background:linear-gradient(90deg,#7dd3fc,#8a6cff); }
   #progress .plabel { margin-top:4px; font-size:12px; font-weight:800; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.4); }
 
-  .stats { display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; margin:14px 4px 4px; }
-  .stat { display:flex; align-items:center; gap:8px; }
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; margin:16px 0 0; padding:15px 16px;
+    background:rgba(255,255,255,.6); border:1px solid #efe8fb; border-radius:20px; }
+  .stat { display:flex; align-items:center; gap:9px; }
   .stat img.ico { width:22px; height:22px; object-fit:contain; }
-  .stat .track { flex:1; height:12px; border-radius:8px; background:#eae3f7; overflow:hidden; }
+  .stat .track { flex:1; height:11px; border-radius:8px; background:#ece5f8; overflow:hidden; }
   .stat .fill { height:100%; width:100%; border-radius:8px; transition:width .3s ease; }
-  .stat .lbl { font-size:10px; font-weight:700; color:#8a7fb0; width:52px; }
+  .stat .lbl { font-size:10.5px; font-weight:800; color:#8a7fb0; width:54px; letter-spacing:.01em; }
   .stat.wide { grid-column:1/-1; }
 
-  .actions { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px; }
+  .actions { display:grid; grid-template-columns:repeat(3,1fr); gap:11px; margin-top:14px; }
   .act { border:none; cursor:pointer; border-radius:16px; padding:12px 6px 9px; background:#fff;
     box-shadow:0 4px 0 #e2d8f7, 0 6px 14px rgba(120,90,200,.14); display:flex; flex-direction:column; align-items:center; gap:4px;
     font-weight:700; font-size:11px; color:#6a5b95; transition:transform .06s, box-shadow .06s; }
@@ -170,23 +200,33 @@
   <div id="splash"><img src="logo.png" alt="ETgotchi" /><div class="load">Chargement…</div></div>
   <div class="device">
     <div class="head">
-      <div class="name">🐾 <span id="petName">…</span></div>
+      <div class="name">🐾 <span id="petName">…</span>
+        <span class="stage"><span id="stageTxt">Œuf</span> · <span id="ageTxt">0 min</span></span>
+      </div>
       <div class="head-right">
-        <div class="stage"><span id="stageTxt">Œuf</span> · <span id="ageTxt">0 min</span></div>
         <span class="coins" id="coinTxt" title="Tes pièces">🪙 0</span>
-        <button class="hbtn" id="shopBtn" title="Boutique">🛍️</button>
-        <button class="hbtn" id="arrangeBtn" title="Aménager la chambre">🎨</button>
-        <button class="hbtn" id="histBtn" title="Historique des jauges">📈</button>
-        <button class="hbtn" id="soundBtn" title="Sons">🔊</button>
-        <button class="hbtn" id="notifBtn" title="Alertes de besoin">🔔</button>
-        <button class="admin-link" id="accountBtn" title="Mon compte" style="background:none;border:none;cursor:pointer">👤</button>
-        <a class="admin-link" href="admin.html" title="Espace admin">⚙️</a>
+        <button class="pill-btn" id="shopBtn" title="Boutique">🛍️</button>
+        <div class="menu-wrap">
+          <button class="pill-btn" id="menuBtn" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+          <div class="menu" id="appMenu">
+            <button class="mrow" id="arrangeBtn"><span class="mi">🎨</span><span class="ml">Aménager la scène</span></button>
+            <button class="mrow" id="histBtn"><span class="mi">📈</span><span class="ml">Historique des jauges</span></button>
+            <button class="mrow" id="soundBtn"><span class="mi">🔊</span><span class="ml ms">Son activé</span></button>
+            <button class="mrow" id="notifBtn"><span class="mi">🔔</span><span class="ml ms">Alertes activées</span></button>
+            <div class="msep"></div>
+            <button class="mrow" id="accountBtn"><span class="mi">👤</span><span class="ml">Mon compte</span></button>
+            <a class="mrow" href="admin.html"><span class="mi">⚙️</span><span class="ml">Espace admin</span></a>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="screen">
       <canvas id="cv"></canvas>
-      <div id="sceneSwitch"></div>
+      <div id="sceneNav">
+        <button id="sceneToggle" aria-haspopup="true" aria-expanded="false">🖼️ <span id="sceneCur">Chambre</span> <span class="chev">▾</span></button>
+        <div id="sceneMenu"></div>
+      </div>
       <div id="float"></div>
       <div id="progress"><div class="pbar"><span id="pfill"></span></div><div class="plabel" id="plabel"></div></div>
       <div id="arrangeBar"><span>🎨 Fais glisser tes décos</span><button id="arrangeDone">✓ Terminé</button></div>
@@ -1093,8 +1133,12 @@ function maybeNotify(list) {
 // --- Boutons son / alertes ---
 function updateToggleUI() {
   const sb = $("soundBtn"), nb = $("notifBtn");
-  if (sb) { sb.textContent = PREFS.sound ? "🔊" : "🔇"; sb.classList.toggle("off", !PREFS.sound); }
-  if (nb) { nb.textContent = PREFS.notif ? "🔔" : "🔕"; nb.classList.toggle("off", !PREFS.notif); }
+  if (sb) { sb.classList.toggle("off", !PREFS.sound);
+    const i = sb.querySelector(".mi"), s = sb.querySelector(".ms");
+    if (i) i.textContent = PREFS.sound ? "🔊" : "🔇"; if (s) s.textContent = PREFS.sound ? "Son activé" : "Son coupé"; }
+  if (nb) { nb.classList.toggle("off", !PREFS.notif);
+    const i = nb.querySelector(".mi"), s = nb.querySelector(".ms");
+    if (i) i.textContent = PREFS.notif ? "🔔" : "🔕"; if (s) s.textContent = PREFS.notif ? "Alertes activées" : "Alertes coupées"; }
 }
 // --- Push (PWA) : notifications même application fermée ---
 const VAPID_PUBLIC = "BMnQZNpIMwhBfIfg3Y3lddw57jm4h28E5L0sVXHfytFHF2BVT0apAUkJKy4iZZqZDhRjQBMrqwhluFHiIH-ifzE";
@@ -1323,33 +1367,36 @@ function buyScene(sc) {
   pet.coins = Math.max(0, (pet.coins || 0) - (GOD ? 0 : sc.price)); pet.scenes = pet.scenes || {}; pet.scenes[sc.id] = true; pet.scene = sc.id;
   preloadScene(sc); sfx("coin"); floatMsg(sc.label + (GOD ? " débloquée 🛡️" : " débloquée ! 🎉")); save(); updateUI(); renderScenes(); renderSceneSwitch();
 }
-// Sélecteur de scène sur l'écran de jeu (changement rapide, sans passer par la boutique)
+// Sélecteur de scène sur l'écran de jeu (pastille compacte + liste déroulante)
+function closeSceneNav() { $("sceneNav")?.classList.remove("open"); const t = $("sceneToggle"); if (t) t.setAttribute("aria-expanded", "false"); }
 function renderSceneSwitch() {
-  const bar = $("sceneSwitch"); if (!bar) return;
+  const nav = $("sceneNav"), menu = $("sceneMenu"); if (!nav || !menu) return;
   const list = CFG.scenes || [];
-  if (!pet || list.length < 2) { bar.classList.remove("show"); return; }
-  bar.innerHTML = "";
+  if (!pet || list.length < 2) { nav.classList.remove("show", "open"); return; }
+  const cur = list.find(s => s.id === pet.scene);
+  const curLbl = $("sceneCur"); if (curLbl) curLbl.textContent = (cur && cur.label) || "Scène";
+  menu.innerHTML = "";
   list.forEach(sc => {
     const owned = !sc.price || GOD || (pet.scenes && pet.scenes[sc.id]);
     const active = pet.scene === sc.id;
     const b = document.createElement("button");
-    b.textContent = (owned ? "" : "🔒 ") + sc.label;
     b.className = (active ? "on" : "") + (owned ? "" : " locked");
+    b.innerHTML = (owned ? "" : "🔒 ") + sc.label + (owned ? "" : '<span class="price">🪙 ' + (sc.price || 0) + "</span>");
     b.onclick = () => {
-      if (owned) {
-        if (pet.scene === sc.id) return;
-        buyScene(sc);           // scène possédée → activation directe
-        renderSceneSwitch();
-      } else {
-        openShop();             // scène verrouillée → boutique, onglet Scènes
-        const tab = document.querySelector('#shopTabs .tab[data-shop="scenes"]');
-        if (tab) tab.click();
-      }
+      closeSceneNav();
+      if (owned) { if (pet.scene !== sc.id) { buyScene(sc); renderSceneSwitch(); } }
+      else { openShop(); const tab = document.querySelector('#shopTabs .tab[data-shop="scenes"]'); if (tab) tab.click(); }
     };
-    bar.appendChild(b);
+    menu.appendChild(b);
   });
-  bar.classList.add("show");
+  nav.classList.add("show");
 }
+$("sceneToggle").onclick = (e) => {
+  e.stopPropagation();
+  closeMenu();
+  const nav = $("sceneNav"), open = nav.classList.toggle("open");
+  $("sceneToggle").setAttribute("aria-expanded", open ? "true" : "false");
+};
 // onglets Objets / Scènes
 document.querySelectorAll("#shopTabs .tab").forEach(t => t.onclick = () => {
   document.querySelectorAll("#shopTabs .tab").forEach(x => x.classList.toggle("on", x === t));
@@ -1359,11 +1406,30 @@ document.querySelectorAll("#shopTabs .tab").forEach(t => t.onclick = () => {
 });
 $("shopBtn").onclick = openShop;
 
+// --- Menu ☰ (commandes secondaires repliées) ---
+function closeMenu() { $("appMenu")?.classList.remove("show"); $("menuBtn")?.setAttribute("aria-expanded", "false"); }
+$("menuBtn").onclick = (e) => {
+  e.stopPropagation();
+  closeSceneNav();
+  const open = $("appMenu").classList.toggle("show");
+  $("menuBtn").setAttribute("aria-expanded", open ? "true" : "false");
+};
+// Les bascules Son/Alertes gardent le menu ouvert ; les autres entrées le referment.
+$("appMenu").addEventListener("click", (e) => {
+  const row = e.target.closest(".mrow"); if (!row) return;
+  if (row.id !== "soundBtn" && row.id !== "notifBtn") closeMenu();
+});
+// Clic hors d'un menu → on referme
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".menu-wrap")) closeMenu();
+  if (!e.target.closest("#sceneNav")) closeSceneNav();
+});
+
 // --- Aménager la chambre : déplacer ses décos ---
 function setArrange(on) {
   editDecor = on; decorDrag = null; panDrag = null;
   $("arrangeBar").classList.toggle("show", on);
-  $("arrangeBtn").classList.toggle("off", !on);
+  const ml = $("arrangeBtn").querySelector(".ml"); if (ml) ml.textContent = on ? "Terminer l'aménagement" : "Aménager la scène";
 }
 $("arrangeBtn").onclick = () => {
   if (!pet || pet.dead) return;
