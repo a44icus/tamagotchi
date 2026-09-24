@@ -237,7 +237,12 @@
       <div style="font-size:40px">🛍️</div>
       <h1>Boutique</h1>
       <p style="margin-top:-6px">Solde&nbsp;: <b id="shopCoins">🪙 0</b><br>Gagne des pièces en jouant et en prenant soin de ton compagnon.</p>
+      <div class="tabs" id="shopTabs">
+        <button class="tab on" data-shop="objects">🎀 Objets</button>
+        <button class="tab" data-shop="scenes">🖼️ Scènes</button>
+      </div>
       <div class="list" id="shopList"></div>
+      <div class="list" id="sceneList" style="display:none"></div>
     </div>
 
     <!-- Mini-jeu « Jouer » : attrape-gourmandises -->
@@ -366,7 +371,9 @@ function newPet(name) {
   const stats = {};
   CFG.needs.forEach(n => stats[n.key] = n.start);
   const foods = CFG.foods || [];
-  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null, decorPos: {}, history: [], lastSample: 0, favFood: foods.length ? foods[Math.floor(Math.random() * foods.length)].id : null, favFound: false };
+  const scenes0 = {}; (CFG.scenes || []).forEach(s => { if (!s.price) scenes0[s.id] = true; });   // scènes gratuites d'office
+  const defScene = ((CFG.scenes || []).find(s => !s.price) || (CFG.scenes || [])[0] || {}).id || "chambre";
+  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null, decorPos: {}, scene: defScene, scenes: scenes0, history: [], lastSample: 0, favFood: foods.length ? foods[Math.floor(Math.random() * foods.length)].id : null, favFound: false };
 }
 function migrate(p) {
   if (!p.stats) { // ancien format à plat
@@ -384,6 +391,9 @@ function migrate(p) {
   if (typeof p.favFood === "undefined") { const f = CFG.foods || []; p.favFood = f.length ? f[Math.floor(Math.random() * f.length)].id : null; }
   if (typeof p.favFound === "undefined") p.favFound = false;
   if (!p.decorPos || typeof p.decorPos !== "object") p.decorPos = {};
+  if (!p.scenes || typeof p.scenes !== "object") p.scenes = {};
+  (CFG.scenes || []).forEach(s => { if (!s.price) p.scenes[s.id] = true; });   // scènes gratuites toujours possédées
+  if (!p.scene || !(CFG.scenes || []).some(s => s.id === p.scene)) p.scene = ((CFG.scenes || []).find(s => !s.price) || (CFG.scenes || [])[0] || {}).id || "chambre";
   return p;
 }
 const S = (k) => pet.stats[k];
@@ -615,15 +625,26 @@ function drawRoomProcedural() {
   ctx.fillStyle = "#e0a060"; ctx.beginPath(); ctx.ellipse(W * .9, H * .89, 16, 5, 0, 0, 7); ctx.fill();
 }
 
-// ---- fond de chambre selon l'heure réelle du joueur ----
-function currentRoom() {
-  const R = CFG.room; if (!R) return null;
-  const h = new Date().getHours();
-  if (h >= R.hours.night || h < R.hours.morning) return R.night;
-  if (h >= R.hours.evening) return R.evening;
-  if (h >= R.hours.day) return R.day;
-  return R.morning;
+// ---- scène active + fond selon l'heure réelle du joueur ----
+function activeScene() {
+  const list = CFG.scenes || [];
+  return list.find(s => s.id === (pet && pet.scene)) || list.find(s => !s.price) || list[0] || null;
 }
+function timeKey() {
+  const R = CFG.room, hrs = (R && R.hours) || { morning: 6, day: 10, evening: 17, night: 20 };
+  const h = new Date().getHours();
+  if (h >= hrs.night || h < hrs.morning) return "night";
+  if (h >= hrs.evening) return "evening";
+  if (h >= hrs.day) return "day";
+  return "morning";
+}
+function currentRoom() {
+  const key = timeKey(), sc = activeScene(), R = CFG.room;
+  if (sc && sc[key]) return sc[key];
+  if (R && R[key]) return R[key];   // repli sur l'ancienne chambre
+  return null;
+}
+function preloadScene(sc) { if (sc) ["morning", "day", "evening", "night"].forEach(k => sc[k] && loadImg(sc[k])); }
 function drawCover(img) {
   const iw = img.naturalWidth, ih = img.naturalHeight, scale = Math.max(W / iw, H / ih);
   const dw = iw * scale, dh = ih * scale;
@@ -632,7 +653,7 @@ function drawCover(img) {
   ctx.drawImage(img, (W - dw) / 2 + roomPanX, (H - dh) / 2, dw, dh);
 }
 function drawRoom() {
-  const bg = currentRoom(), img = bg ? IMG[bg] : null;
+  const bg = currentRoom(), img = bg ? (IMG[bg] || loadImg(bg)) : null;
   if (ready(img)) drawCover(img); else drawRoomProcedural();
   drawDecor();                                                                         // déco achetée (solidaire du décor)
   for (const p of pet.poops) {   // solidaires du décor
@@ -1242,7 +1263,44 @@ function renderShop() {
     row.appendChild(btn);
     list.appendChild(row);
   });
+  renderScenes();
 }
+// --- Scènes (fonds déblocables) ---
+function renderScenes() {
+  const list = $("sceneList"); if (!list) return; list.innerHTML = "";
+  (CFG.scenes || []).forEach(sc => {
+    const owned = !sc.price || (pet.scenes && pet.scenes[sc.id]);
+    const active = pet.scene === sc.id;
+    const row = document.createElement("div"); row.className = "rowitem";
+    const btn = document.createElement("button");
+    if (active) { btn.className = "play"; btn.textContent = "Actif ✓"; btn.disabled = true; btn.style.opacity = ".6"; }
+    else if (owned) { btn.className = "play"; btn.textContent = "Activer"; }
+    else { const afford = (pet.coins || 0) >= (sc.price || 0); btn.className = afford ? "play" : "del"; btn.textContent = "🪙 " + (sc.price || 0); }
+    btn.onclick = () => buyScene(sc);
+    const thumbFile = sc.day || sc.morning || "";
+    const thumb = thumbFile ? '<img src="' + SPRITE_BASE + thumbFile + '" style="width:54px;height:34px;object-fit:cover;border-radius:6px" alt="">' : '<div style="font-size:22px">🖼️</div>';
+    row.innerHTML = thumb + '<div class="grow">' + sc.label + '<div class="muted">' + (owned ? (active ? "Scène active" : "Possédée") : "Nouvelle scène") + '</div></div>';
+    row.appendChild(btn); list.appendChild(row);
+  });
+}
+function buyScene(sc) {
+  if (!pet) return;
+  const owned = !sc.price || (pet.scenes && pet.scenes[sc.id]);
+  if (owned) {
+    if (pet.scene !== sc.id) { pet.scene = sc.id; pet.scenes = pet.scenes || {}; pet.scenes[sc.id] = true; preloadScene(sc); sfx("ok"); floatMsg("Scène : " + sc.label); save(); renderScenes(); }
+    return;
+  }
+  if ((pet.coins || 0) < (sc.price || 0)) { floatMsg("Pas assez de pièces 🪙"); sfx("alert"); return; }
+  pet.coins -= sc.price; pet.scenes = pet.scenes || {}; pet.scenes[sc.id] = true; pet.scene = sc.id;
+  preloadScene(sc); sfx("coin"); floatMsg(sc.label + " débloquée ! 🎉"); save(); updateUI(); renderScenes();
+}
+// onglets Objets / Scènes
+document.querySelectorAll("#shopTabs .tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll("#shopTabs .tab").forEach(x => x.classList.toggle("on", x === t));
+  const scenes = t.dataset.shop === "scenes";
+  $("shopList").style.display = scenes ? "none" : "";
+  $("sceneList").style.display = scenes ? "" : "none";
+});
 $("shopBtn").onclick = openShop;
 
 // --- Aménager la chambre : déplacer ses décos ---

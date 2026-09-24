@@ -145,11 +145,16 @@
     ],
     // Positions fixes de certains états : { stateKey: {x, y} } en fraction 0..1 (x = horizontal, y = ligne du sol/pieds)
     positions: {},
-    // Cycle jour/nuit calé sur l'horloge réelle du joueur (heures de bascule)
+    // Cycle jour/nuit calé sur l'horloge réelle du joueur (heures de bascule) — sert de repli et de scène par défaut
     room: {
       morning: "chambre/matin.png", day: "chambre/midi.png", evening: "chambre/fin_journee.png", night: "chambre/nuit.png",
       hours: { morning: 6, day: 10, evening: 17, night: 20 },
     },
+    // Scènes déblocables (achat en pièces) : chaque scène a son cycle jour/nuit.
+    // price 0 = débloquée d'office. Convention images : scenes/<id>/{matin,midi,fin_journee,nuit}.png
+    scenes: [
+      { id: "chambre", label: "Chambre d'Elliott", price: 0, morning: "chambre/matin.png", day: "chambre/midi.png", evening: "chambre/fin_journee.png", night: "chambre/nuit.png" },
+    ],
   };
 
   // --- Utilitaires ---

@@ -118,6 +118,13 @@
     </section>
 
     <section>
+      <h2>🖼️ Scènes <span class="tag">fonds déblocables (achat en pièces) — 4 images par scène (cycle jour/nuit)</span></h2>
+      <div id="scenesWrap" style="display:flex; flex-direction:column; gap:14px"></div>
+      <button class="addbtn" id="addScene" style="margin-top:12px">＋ Ajouter une scène</button>
+      <p class="hint" style="margin-top:8px">Convention : <code>scenes/&lt;id&gt;/matin.png</code>, <code>midi.png</code>, <code>fin_journee.png</code>, <code>nuit.png</code>. Prix 0 = débloquée d'office.</p>
+    </section>
+
+    <section>
       <h2>🌗 Chambre — cycle jour/nuit <span class="tag">calé sur l'horloge réelle du joueur</span></h2>
       <div class="grid sim-grid" id="roomGrid"></div>
       <p class="hint" style="margin-top:8px">Les 4 fonds (matin, midi, fin de journée, nuit) sont dans <code>chambre/</code>. Règle ici l'heure de bascule de chaque ambiance (0–23).</p>
@@ -379,7 +386,24 @@ function renderFoods() {
   });
   $("addFood").onclick = () => { cfg.foods.push({ id: "food" + Date.now(), label: "Aliment", emoji: "🍽️", hunger: 15, fun: 5 }); renderFoods(); };
 }
-function renderAll() { renderNeeds(); renderThresholds(); renderMoods(); renderActions(); renderStages(); renderSim(); renderDiffMini(); renderEconomy(); renderFoods(); renderRoom(); renderPositions(); }
+// ============ SCÈNES ============
+function renderScenes() {
+  const w = $("scenesWrap"); w.innerHTML = ""; cfg.scenes = cfg.scenes || [];
+  cfg.scenes.forEach((sc, i) => {
+    const box = el("div", "card"); box.style.padding = "12px"; box.style.border = "1px solid var(--line)"; box.style.borderRadius = "12px";
+    const top = el("div", "grid"); top.style.gridTemplateColumns = "repeat(auto-fit,minmax(120px,1fr))"; top.style.gap = "8px"; top.style.alignItems = "end";
+    top.append(fieldWrap("Identifiant", text(sc.id || "", v => sc.id = v)));
+    top.append(fieldWrap("Nom", text(sc.label || "", v => sc.label = v)));
+    top.append(fieldWrap("Prix (pièces)", num(sc.price || 0, v => sc.price = v)));
+    const del = el("button", "del", "Supprimer"); del.onclick = () => { cfg.scenes.splice(i, 1); renderScenes(); };
+    top.append(del);
+    const imgs = el("div", "grid"); imgs.style.gridTemplateColumns = "repeat(auto-fit,minmax(150px,1fr))"; imgs.style.gap = "8px"; imgs.style.marginTop = "8px";
+    [["morning", "🌅 Matin"], ["day", "☀️ Midi"], ["evening", "🌇 Soir"], ["night", "🌙 Nuit"]].forEach(([k, lbl]) => imgs.append(fieldWrap(lbl, text(sc[k] || "", v => sc[k] = v || undefined))));
+    box.append(top, imgs); w.append(box);
+  });
+  $("addScene").onclick = () => { const id = "scene" + Date.now(); cfg.scenes.push({ id, label: "Nouvelle scène", price: 30, morning: "scenes/" + id + "/matin.png", day: "scenes/" + id + "/midi.png", evening: "scenes/" + id + "/fin_journee.png", night: "scenes/" + id + "/nuit.png" }); renderScenes(); };
+}
+function renderAll() { renderNeeds(); renderThresholds(); renderMoods(); renderActions(); renderStages(); renderSim(); renderDiffMini(); renderEconomy(); renderFoods(); renderScenes(); renderRoom(); renderPositions(); }
 (async () => { try { cfg = await CLOUD.loadConfig(); } catch {} renderAll(); })();
 
 // ============ Barre d'outils ============
