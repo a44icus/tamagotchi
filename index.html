@@ -701,7 +701,8 @@ function mood() {
   if (S("health") < T.healthLow) return "crying";
   if (S("fun") < T.funLow) return "sad";
   if (S("energy") < T.energyLow) return "exhausted";
-  if (S("fun") > T.happyFun && S("hunger") > T.happyHunger) return "happy";
+  // Content : « happy » reste une expression ponctuelle (~2 s toutes les ~14 s), sinon repos
+  if (S("fun") > T.happyFun && S("hunger") > T.happyHunger) return (performance.now() % 14000 < 2000) ? "happy" : "idle";
   return "idle";
 }
 
