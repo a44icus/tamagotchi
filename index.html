@@ -814,13 +814,17 @@ function drawCreature(t) {
 const particles = [];
 function burst(name, n) {
   if (!name || W <= 0) return; const img = IMG[name] || loadImg(name); const cx = creature.x * W, cy = H * 0.5;
-  for (let i = 0; i < (n || 6); i++) particles.push({ img, x: cx + (Math.random() - .5) * 100, y: cy + (Math.random() - .3) * 90, vy: -(0.01 + Math.random() * .03), t: 0, life: 700 + Math.random() * 500, s: .35 + Math.random() * .35 });
+  const base = H * 0.055;   // taille cible des particules (petite, indépendante de la résolution du sprite)
+  for (let i = 0; i < (n || 6); i++) particles.push({ img, x: cx + (Math.random() - .5) * W * 0.16, y: cy + (Math.random() - .3) * H * 0.2, vy: -(0.01 + Math.random() * .03), t: 0, life: 700 + Math.random() * 500, sz: base * (0.75 + Math.random() * 0.6) });
 }
 function drawParticles(dt) {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.t += dt; p.y += p.vy * dt; const k = 1 - p.t / p.life;
     if (k <= 0) { particles.splice(i, 1); continue; }
-    if (ready(p.img)) { const w = p.img.naturalWidth * p.s, h = p.img.naturalHeight * p.s; ctx.globalAlpha = Math.max(0, Math.min(1, k * 1.4)); ctx.drawImage(p.img, p.x - w / 2, p.y - h / 2, w, h); ctx.globalAlpha = 1; }
+    if (ready(p.img)) {
+      const h = p.sz, w = p.img.naturalWidth / p.img.naturalHeight * p.sz;   // hauteur cible, ratio conservé
+      ctx.globalAlpha = Math.max(0, Math.min(1, k * 1.4)); ctx.drawImage(p.img, p.x - w / 2, p.y - h / 2, w, h); ctx.globalAlpha = 1;
+    }
   }
 }
 
