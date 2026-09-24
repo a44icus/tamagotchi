@@ -155,6 +155,7 @@
     scenes: [
       { id: "chambre", label: "Chambre d'Elliott", price: 0,  morning: "scenes/chambre/matin.png", day: "scenes/chambre/midi.png", evening: "scenes/chambre/fin_journee.png", night: "scenes/chambre/nuit.png" },
       { id: "garage",  label: "Le garage",         price: 40, morning: "scenes/garage/matin.png",  day: "scenes/garage/midi.png",  evening: "scenes/garage/fin_journee.png",  night: "scenes/garage/nuit.png" },
+      { id: "foret",   label: "La forêt",          price: 60, morning: "scenes/foret/matin.png",   day: "scenes/foret/midi.png",   evening: "scenes/foret/fin_journee.png",   night: "scenes/foret/nuit.png" },
     ],
   };
 
