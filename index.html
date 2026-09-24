@@ -374,7 +374,7 @@ function newPet(name) {
   const foods = CFG.foods || [];
   const scenes0 = {}; (CFG.scenes || []).forEach(s => { if (!s.price) scenes0[s.id] = true; });   // scènes gratuites d'office
   const defScene = ((CFG.scenes || []).find(s => !s.price) || (CFG.scenes || [])[0] || {}).id || "chambre";
-  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null, decorPos: {}, scene: defScene, scenes: scenes0, history: [], lastSample: 0, favFood: foods.length ? foods[Math.floor(Math.random() * foods.length)].id : null, favFound: false };
+  return { name, birth: now, lastSeen: now, stats, asleep: false, sick: false, dead: false, deadReason: "", poops: [], poopTimer: 0, careSum: 0, careTicks: 0, coins: 0, inventory: {}, equipped: null, decor: {}, scene: defScene, scenes: scenes0, history: [], lastSample: 0, favFood: foods.length ? foods[Math.floor(Math.random() * foods.length)].id : null, favFound: false };
 }
 function migrate(p) {
   if (!p.stats) { // ancien format à plat
@@ -391,7 +391,12 @@ function migrate(p) {
   if (typeof p.lastSample !== "number") p.lastSample = 0;
   if (typeof p.favFood === "undefined") { const f = CFG.foods || []; p.favFood = f.length ? f[Math.floor(Math.random() * f.length)].id : null; }
   if (typeof p.favFound === "undefined") p.favFound = false;
-  if (!p.decorPos || typeof p.decorPos !== "object") p.decorPos = {};
+  // déco par scène : { sceneId: { itemId: {x,y} } }
+  if (!p.decor || typeof p.decor !== "object") p.decor = {};
+  if (Object.keys(p.decor).length === 0 && p.inventory) {   // migration depuis l'ancien modèle global -> scène chambre
+    const owned = (typeof SHOP !== "undefined" ? SHOP : []).filter(it => it.type === "room" && p.inventory[it.id]);
+    if (owned.length) { const m = p.decor.chambre = {}; owned.forEach(it => m[it.id] = (p.decorPos && p.decorPos[it.id]) || { x: it.x, y: it.y }); }
+  }
   if (!p.scenes || typeof p.scenes !== "object") p.scenes = {};
   (CFG.scenes || []).forEach(s => { if (!s.price) p.scenes[s.id] = true; });   // scènes gratuites toujours possédées
   if (!p.scene || !(CFG.scenes || []).some(s => s.id === p.scene)) p.scene = ((CFG.scenes || []).find(s => !s.price) || (CFG.scenes || [])[0] || {}).id || "chambre";
@@ -520,24 +525,26 @@ const creature = { x: 0.5, tx: 0.5, dir: 1 };
 // --- glisser (doigt/souris) : balayer la chambre, OU déplacer une déco en mode « aménager » ---
 let roomPanX = 0, panDrag = null, editDecor = false, decorDrag = null;
 function canvasXY(e) { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-function decorPosOf(it) { return (pet.decorPos && pet.decorPos[it.id]) || { x: it.x, y: it.y }; }
+function curScene() { return (pet && pet.scene) || "chambre"; }
+function sceneDecor() { pet.decor = pet.decor || {}; return (pet.decor[curScene()] = pet.decor[curScene()] || {}); }   // objets posés dans la scène courante
 function decorHit(tx, ty) {
-  if (!pet || !pet.inventory) return null;
-  const owned = SHOP.filter(it => it.type === "room" && pet.inventory[it.id]);
-  for (let i = owned.length - 1; i >= 0; i--) {   // du dessus vers le dessous
-    const it = owned[i], pos = decorPosOf(it), cx = pos.x * W + roomPanX, cy = pos.y * H, rad = H * (it.ah || 0.2) * 0.7;
-    if (Math.abs(tx - cx) < rad && Math.abs(ty - cy) < rad) return it;
+  if (!pet) return null;
+  const map = (pet.decor && pet.decor[curScene()]) || {}, ids = Object.keys(map);
+  for (let i = ids.length - 1; i >= 0; i--) {   // du dessus vers le dessous
+    const it = SHOP.find(o => o.id === ids[i]); if (!it) continue;
+    const pos = map[ids[i]], cx = pos.x * W + roomPanX, cy = pos.y * H, rad = H * (it.ah || 0.2) * 0.7;
+    if (Math.abs(tx - cx) < rad && Math.abs(ty - cy) < rad) return ids[i];
   }
   return null;
 }
 cv.addEventListener("pointerdown", (e) => {
   try { cv.setPointerCapture(e.pointerId); } catch {}
-  if (editDecor) { const p = canvasXY(e); const it = decorHit(p.x, p.y); decorDrag = it ? it.id : null; panDrag = null; return; }
+  if (editDecor) { const p = canvasXY(e); decorDrag = decorHit(p.x, p.y); panDrag = null; return; }
   panDrag = { x: e.clientX, y: e.clientY, pan: roomPanX };
 });
 cv.addEventListener("pointermove", (e) => {
   if (editDecor) {
-    if (decorDrag) { const p = canvasXY(e); pet.decorPos = pet.decorPos || {}; pet.decorPos[decorDrag] = { x: Math.max(0.05, Math.min(0.95, (p.x - roomPanX) / W)), y: Math.max(0.08, Math.min(0.96, p.y / H)) }; }
+    if (decorDrag) { const p = canvasXY(e); sceneDecor()[decorDrag] = { x: Math.max(0.05, Math.min(0.95, (p.x - roomPanX) / W)), y: Math.max(0.08, Math.min(0.96, p.y / H)) }; }
     return;
   }
   if (panDrag) roomPanX = panDrag.pan + (e.clientX - panDrag.x);
@@ -717,10 +724,11 @@ function drawObjTo(c, img, cx, cy, targetH) {
 }
 function drawObj(img, cx, cy, targetH) { drawObjTo(ctx, img, cx, cy, targetH); }
 function drawDecor() {
-  if (!pet || !pet.inventory) return;
-  for (const it of SHOP) {
-    if (it.type !== "room" || !pet.inventory[it.id]) continue;
-    const pos = decorPosOf(it), cx = pos.x * W + roomPanX, cy = pos.y * H;
+  if (!pet) return;
+  const map = (pet.decor && pet.decor[curScene()]) || {};   // objets propres à la scène active
+  for (const id in map) {
+    const it = SHOP.find(o => o.id === id); if (!it || it.type !== "room") continue;
+    const pos = map[id], cx = pos.x * W + roomPanX, cy = pos.y * H;
     if (editDecor) {   // repère de déplacement
       ctx.save(); ctx.strokeStyle = "rgba(138,108,255,.95)"; ctx.setLineDash([5, 4]); ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(cx, cy, H * (it.ah || 0.2) * 0.62, 0, 7); ctx.stroke(); ctx.restore();
@@ -1230,6 +1238,11 @@ function buyItem(it) {
   const owned = pet.inventory && pet.inventory[it.id];
   if (owned) {
     if (it.type === "wear") { pet.equipped = (pet.equipped === it.id) ? null : it.id; sfx("ok"); save(); renderShop(); }
+    else if (it.type === "room") {   // placer / retirer dans la scène courante
+      const map = sceneDecor();
+      if (map[it.id]) { delete map[it.id]; floatMsg(it.label + " retiré"); } else { map[it.id] = { x: it.x, y: it.y }; floatMsg(it.label + " placé ici"); }
+      sfx("ok"); save(); renderShop();
+    }
     return;
   }
   const price = GOD ? 0 : priceOf(it);
@@ -1237,6 +1250,7 @@ function buyItem(it) {
   pet.coins = Math.max(0, (pet.coins || 0) - price);
   pet.inventory = pet.inventory || {}; pet.inventory[it.id] = true;
   if (it.type === "wear") pet.equipped = it.id;
+  else if (it.type === "room") sceneDecor()[it.id] = { x: it.x, y: it.y };   // posé dans la scène courante
   sfx("coin"); floatMsg(it.label + (GOD ? " débloqué 🛡️" : " acheté ! 🎉"));
   save(); updateUI(); renderShop();
 }
@@ -1254,13 +1268,16 @@ function renderShop() {
     } else if (it.type === "wear") {
       btn.className = equipped ? "del" : "play";
       btn.textContent = equipped ? "Retirer" : "Porter";
-    } else {
-      btn.className = "play"; btn.textContent = "Possédé ✓"; btn.disabled = true; btn.style.opacity = ".6";
+    } else {   // déco possédée : posée ou non dans la scène courante
+      const placed = !!(pet.decor && pet.decor[curScene()] && pet.decor[curScene()][it.id]);
+      btn.className = placed ? "del" : "play";
+      btn.textContent = placed ? "Retirer" : "Placer ici";
     }
     btn.onclick = () => buyItem(it);
+    const placedHere = it.type === "room" && pet.decor && pet.decor[curScene()] && pet.decor[curScene()][it.id];
     const thumb = it.sprite ? '<img src="' + SPRITE_BASE + it.sprite + '" style="width:36px;height:36px;object-fit:contain" alt="">' : '<div style="font-size:22px">' + it.emoji + '</div>';
     row.innerHTML = thumb + '<div class="grow">' + it.label +
-      '<div class="muted">' + (it.type === "wear" ? "Accessoire" + (equipped ? " · porté" : "") : "Déco de chambre") + '</div></div>';
+      '<div class="muted">' + (it.type === "wear" ? "Accessoire" + (equipped ? " · porté" : "") : "Déco" + (owned ? (placedHere ? " · dans cette scène" : " · possédée") : "")) + '</div></div>';
     row.appendChild(btn);
     list.appendChild(row);
   });
@@ -1312,7 +1329,8 @@ function setArrange(on) {
 }
 $("arrangeBtn").onclick = () => {
   if (!pet || pet.dead) return;
-  if (!editDecor && !SHOP.some(it => it.type === "room" && pet.inventory && pet.inventory[it.id])) { floatMsg("Achète d'abord de la déco 🛍️"); return; }
+  const placedHere = Object.keys((pet.decor && pet.decor[curScene()]) || {}).length;
+  if (!editDecor && !placedHere) { floatMsg("Place d'abord une déco ici (boutique 🛍️)"); return; }
   setArrange(!editDecor);
 };
 $("arrangeDone").onclick = () => setArrange(false);
